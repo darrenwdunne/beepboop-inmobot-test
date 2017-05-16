@@ -5,7 +5,6 @@ const Slapp = require('slapp')
 const ConvoStore = require('slapp-convo-beepboop')
 const Context = require('slapp-context-beepboop')
 const jira = require('./jira')
-var jiraConfig = {}
 
 // use `PORT` env var on Beep Boop - default to 3000 locally
 var port = process.env.PORT || 3000
@@ -20,7 +19,7 @@ var slapp = Slapp({
 var HELP_TEXT = `
 I will respond to the following messages:
 \`help\` - to see this message
-\`(ra16-|mds-|px-|vm-|vnow-)1234\` - to fetch a JIRA issue (e.g. PX-1416 or VNOW-5081)
+\`(ra16-|mds-|px-|vm-|vnow-)1234\` - to fetch a JIRA issue (e.g. PX-1416 or VNOW-5081).
 `
 
 // *********************************************
