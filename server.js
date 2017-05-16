@@ -19,7 +19,7 @@ var slapp = Slapp({
 
 var HELP_TEXT = `
 I will respond to the following messages:
-\`help\` - to see this message.
+\`help\` - to see this message
 \`(ra16-|mds-|px-|vm-|vnow-)1234\` - to fetch a JIRA issue (e.g. PX-1416 or VNOW-5081)
 `
 
