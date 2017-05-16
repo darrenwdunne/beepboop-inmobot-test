@@ -1,0 +1,21 @@
+name: inMoBot-Test
+description: SlackBot to fetch JIRA tickets via URL (Test Porposies)
+avatar: .beepboop/avatar.png
+# To learn everything supported in the bot.yml file, visit https://beepboophq.com/docs/article/bot-yml
+# Following values are "secret" and will be set when installing the slackbot
+config:
+- name: JIRA_URL
+  friendly_name: JIRA URL
+  info: High-level JIRA URL (e.g. https://COMPANYNAME.atlassian.net\)
+  type: secret
+  global: true
+- name: JIRA_U
+  friendly_name: JIRA U
+  info: JIRA U
+  type: secret
+  global: true
+- name: JIRA_P
+  friendly_name: JIRA P
+  info: JIRA P
+  type: secret
+  global: true
