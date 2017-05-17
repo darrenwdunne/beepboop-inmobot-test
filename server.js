@@ -20,6 +20,8 @@ var HELP_TEXT = `
 I will respond to the following messages:
 \`help\` - to see this message
 \`(ra16-|mds-|px-|vm-|vnow-)1234\` - to fetch a JIRA issue (e.g. PX-1416 or VNOW-5081).
+\`random-spark\` - show me a random Spark bug
+
 `
 
 // *********************************************
@@ -31,6 +33,13 @@ slapp.message('help', ['mention', 'direct_message'], (msg) => {
   msg.say(HELP_TEXT)
 })
 
+// return a random Spark low priority bug from the backlog
+slapp.message('rand', ['mention', 'direct_message'], (msg) => {
+  const bugs = ['VNOW-6317', 'VNOW-6217', 'VNOW-6215', 'VNOW-6202', 'VNOW-6188', 'VNOW-6185', 'VNOW-6184', 'VNOW-6176', 'VNOW-6175', 'VNOW-6172', 'VNOW-6156', 'VNOW-6151', 'VNOW-6150', 'VNOW-6149', 'VNOW-6146', 'VNOW-6144', 'VNOW-6141', 'VNOW-6137', 'VNOW-6133', 'VNOW-6129', 'VNOW-6128', 'VNOW-6126', 'VNOW-6124', 'VNOW-6122', 'VNOW-6117', 'VNOW-6115', 'VNOW-6113', 'VNOW-6111', 'VNOW-6110', 'VNOW-6108', 'VNOW-6107', 'VNOW-6096', 'VNOW-6094', 'VNOW-6093', 'VNOW-6092', 'VNOW-6091', 'VNOW-6088', 'VNOW-6087', 'VNOW-6083', 'VNOW-6082', 'VNOW-6081', 'VNOW-6080', 'VNOW-6078', 'VNOW-6076', 'VNOW-6074', 'VNOW-6072', 'VNOW-6042', 'VNOW-6024', 'VNOW-6020', 'VNOW-5992', 'VNOW-5974', 'VNOW-5971', 'VNOW-5961', 'VNOW-5932', 'VNOW-5928', 'VNOW-5914', 'VNOW-5912', 'VNOW-5900', 'VNOW-5891', 'VNOW-5890', 'VNOW-5879', 'VNOW-5868', 'VNOW-5867', 'VNOW-5843', 'VNOW-5835', 'VNOW-5825', 'VNOW-5804', 'VNOW-5756', 'VNOW-5739', 'VNOW-5733', 'VNOW-5696', 'VNOW-5691', 'VNOW-5673', 'VNOW-5643', 'VNOW-5587', 'VNOW-5561', 'VNOW-5527', 'VNOW-5517', 'VNOW-5492', 'VNOW-5483', 'VNOW-5479', 'VNOW-5476', 'VNOW-5470', 'VNOW-5464', 'VNOW-5456', 'VNOW-5452', 'VNOW-5428', 'VNOW-5423', 'VNOW-5422', 'VNOW-5399', 'VNOW-5366', 'VNOW-5365', 'VNOW-5340', 'VNOW-5335', 'VNOW-5319', 'VNOW-5303', 'VNOW-5293', 'VNOW-5290', 'VNOW-5242', 'VNOW-5239', 'VNOW-5224', 'VNOW-5200', 'VNOW-5184', 'VNOW-5160', 'VNOW-5154', 'VNOW-5108', 'VNOW-5104', 'VNOW-5072', 'VNOW-5016', 'VNOW-4993', 'VNOW-4990', 'VNOW-4989', 'VNOW-4978', 'VNOW-4976', 'VNOW-4961', 'VNOW-4905', 'VNOW-4903', 'VNOW-4901', 'VNOW-4900', 'VNOW-4895', 'VNOW-4892', 'VNOW-4875', 'VNOW-4874', 'VNOW-4873', 'VNOW-4870', 'VNOW-4864', 'VNOW-4840', 'VNOW-4835', 'VNOW-4834', 'VNOW-4830', 'VNOW-4817', 'VNOW-4809', 'VNOW-4808', 'VNOW-4807', 'VNOW-4806', 'VNOW-4765', 'VNOW-4758', 'VNOW-4751', 'VNOW-4742', 'VNOW-4725', 'VNOW-4707', 'VNOW-4577', 'VNOW-4547', 'VNOW-4250', 'VNOW-3870', 'VNOW-3759', 'VNOW-3523', 'VNOW-2903']
+  const issueKey = Math.floor(Math.random() * bugs.length) + 1
+  outputMessage(msg, issueKey)
+})
+
 // Respond to a JIRA issue (e.g. PX-1234)
 slapp.message(/(ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 'ambient'], (msg) => {
   var text = (msg.body.event && msg.body.event.text) || ''
@@ -40,81 +49,85 @@ slapp.message(/(ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 
   // there may be multiple issues in the text
   for (var i = 0; i < match.length; i++) {
     const issueKey = match[i].toUpperCase()
-    // these env vars are configured during bot installation and passed in during initialization
-    jira.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
-      var avatarUrl = null
-      if (jiraIssue.fields.assignee != null) {
-        avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
-      }
-      var color = 'good'
-      switch (jiraIssue.fields.issuetype.name) {
-        case 'Bug':
-        case 'Bug-task':
-          switch (jiraIssue.fields.priority.name) {
-            case 'Open':
-              color = 'good'
-              break
-            case 'High':
-              color = 'danger'
-              break
-            case 'Medium':
-              color = 'warning'
-              break
-          }
-          break
-        case 'Story':
-          color = '#63BA3C'
-          break
-        case 'Task':
-        case 'Sub-task':
-          color = '#4BADE8'
-          break
-        case 'Epic':
-          color = '#904EE2'
-          break
-      }
-      msg.say({
-        text: '',
-        // text: 'Proximus JIRA issue ' + issueKey,
-        attachments: [{
-          text: '',
-          title: issueKey + ': ' + jiraIssue.fields.summary,
-          thumb_url: avatarUrl,
-          title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
-          mrkdwn_in: ['fields'],
-          'fields': [
-            {
-              'title': 'Status',
-              'value': '`' + jiraIssue.fields.status.name + '`',
-              'short': true
-            },
-            {
-              'title': 'Assignee',
-              'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
-              'short': true
-            },
-            {
-              'title': 'Priority',
-              'value': '`' + jiraIssue.fields.priority.name + '`',
-              'short': true
-            },
-            {
-              'title': 'Type',
-              'value': jiraIssue.fields.issuetype.name,
-              'short': true
-            }
-          ],
-          color: color
-        }]
-      })
-    }).catch((err) => {
-      console.log(err)
-      msg.say({
-        text: "Sorry, couldn't find " + issueKey + ' :cry:'
-      })
-    })
+    outputMessage(msg, issueKey)
   }
 })
+
+function outputMessage (msg, issueKey) {
+  // these env vars are configured during bot installation and passed in during initialization
+  jira.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
+    var avatarUrl = null
+    if (jiraIssue.fields.assignee != null) {
+      avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
+    }
+    var color = 'good'
+    switch (jiraIssue.fields.issuetype.name) {
+      case 'Bug':
+      case 'Bug-task':
+        switch (jiraIssue.fields.priority.name) {
+          case 'Open':
+            color = 'good'
+            break
+          case 'High':
+            color = 'danger'
+            break
+          case 'Medium':
+            color = 'warning'
+            break
+        }
+        break
+      case 'Story':
+        color = '#63BA3C'
+        break
+      case 'Task':
+      case 'Sub-task':
+        color = '#4BADE8'
+        break
+      case 'Epic':
+        color = '#904EE2'
+        break
+    }
+    msg.say({
+      text: '',
+      // text: 'Proximus JIRA issue ' + issueKey,
+      attachments: [{
+        text: '',
+        title: issueKey + ': ' + jiraIssue.fields.summary,
+        thumb_url: avatarUrl,
+        title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
+        mrkdwn_in: ['fields'],
+        'fields': [
+          {
+            'title': 'Status',
+            'value': '`' + jiraIssue.fields.status.name + '`',
+            'short': true
+          },
+          {
+            'title': 'Assignee',
+            'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
+            'short': true
+          },
+          {
+            'title': 'Priority',
+            'value': '`' + jiraIssue.fields.priority.name + '`',
+            'short': true
+          },
+          {
+            'title': 'Type',
+            'value': jiraIssue.fields.issuetype.name,
+            'short': true
+          }
+        ],
+        color: color
+      }]
+    })
+  }).catch((err) => {
+    console.log(err)
+    msg.say({
+      text: "Sorry, couldn't find " + issueKey + ' :cry:'
+    })
+  })
+}
 
 // // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
 // slapp
