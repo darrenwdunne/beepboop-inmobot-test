@@ -88,10 +88,10 @@ function outputMessage (msg, issueKey, introText) {
         break
     }
     msg.say({
-      text: '',
+      text: introText,
       // text: 'Proximus JIRA issue ' + issueKey,
       attachments: [{
-        text: introText,
+        text: '',
         title: issueKey + ': ' + jiraIssue.fields.summary,
         thumb_url: avatarUrl,
         title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
