@@ -88,7 +88,6 @@ function outputMessage (msg, issueKey, introText) {
     }
     msg.say({
       text: introText,
-      // text: 'Proximus JIRA issue ' + issueKey,
       attachments: [{
         text: '',
         title: issueKey + ': ' + jiraIssue.fields.summary,
