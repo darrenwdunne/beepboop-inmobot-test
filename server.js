@@ -92,7 +92,7 @@ function outputMessage (msg, issueKey, introText) {
         attachments: [{
           text: '',
           title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
-          // thumb_url: avatarUrl,
+          thumb_url: avatarUrl,
           author_icon: avatarUrl,
           title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
           mrkdwn_in: ['fields'],
