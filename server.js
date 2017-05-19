@@ -93,6 +93,7 @@ function outputMessage (msg, issueKey, introText) {
           text: '',
           title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
           thumb_url: avatarUrl,
+          author_name: jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
           author_icon: avatarUrl,
           title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
           mrkdwn_in: ['fields'],
