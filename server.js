@@ -60,33 +60,7 @@ function outputMessage (msg, issueKey, introText) {
       if (jiraIssue.fields.assignee != null) {
         avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
       }
-      var color = 'good'
-      switch (jiraIssue.fields.issuetype.name) {
-        case 'Bug':
-        case 'Bug-task':
-          switch (jiraIssue.fields.priority.name) {
-            case 'Open':
-              color = 'good'
-              break
-            case 'High':
-              color = 'danger'
-              break
-            case 'Medium':
-              color = 'warning'
-              break
-          }
-          break
-        case 'Story':
-          color = '#63BA3C'
-          break
-        case 'Task':
-        case 'Sub-task':
-          color = '#4BADE8'
-          break
-        case 'Epic':
-          color = '#904EE2'
-          break
-      }
+
       msg.say({
         text: introText,
         attachments: [{
@@ -94,28 +68,28 @@ function outputMessage (msg, issueKey, introText) {
           text: '',
           title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
           // thumb_url: avatarUrl,
-          author_name: jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
+          author_name: getAttributesText(jiraIssue),
           author_icon: avatarUrl,
           title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
-          mrkdwn_in: ['fields'],
-          'fields': [
-            {
-              'title': 'Status',
-              'value': '`' + jiraIssue.fields.status.name + '`',
-              'short': true
-            },
-            // {
-            //   'title': 'Assignee',
-            //   'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
-            //   'short': true
-            // },
-            {
-              'title': 'Priority',
-              'value': '`' + jiraIssue.fields.priority.name + '`',
-              'short': true
-            }
-          ],
-          color: color
+          // mrkdwn_in: ['fields'],
+          // 'fields': [
+          //   {
+          //     'title': 'Status',
+          //     'value': '`' + jiraIssue.fields.status.name + '`',
+          //     'short': true
+          //   },
+          //   // {
+          //   //   'title': 'Assignee',
+          //   //   'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
+          //   //   'short': true
+          //   // },
+          //   {
+          //     'title': 'Priority',
+          //     'value': '`' + jiraIssue.fields.priority.name + '`',
+          //     'short': true
+          //   }
+          // ],
+          color: getColor(jiraIssue.fields.issuetype.name, jiraIssue.fields.priority.name)
         }]
       })
     }).catch((err) => {
@@ -125,6 +99,57 @@ function outputMessage (msg, issueKey, introText) {
       })
     })
   }
+}
+
+function getAttributesText (jiraIssue) {
+  var text = jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName
+  text += ' | ' + jiraIssue.fields.status.name + ' | ' + jiraIssue.fields.priority.name
+  switch (jiraIssue.fields.priority.name) {
+    case 'High':
+      text += ' :jira-high:'
+      break
+    case 'Medium':
+      text += ' :jira-medium:'
+      break
+    case 'Low':
+      text += ' :jira-low:'
+      break
+    case 'Open':
+      text += ' :jira-open:'
+      break
+  }
+  return text
+}
+
+function getColor (issuetype, priority) {
+  var color = 'good'
+  switch (issuetype) {
+    case 'Bug':
+    case 'Bug-task':
+      switch (priority) {
+        case 'Open':
+          color = 'good'
+          break
+        case 'High':
+          color = 'danger'
+          break
+        case 'Medium':
+          color = 'warning'
+          break
+      }
+      break
+    case 'Story':
+      color = '#63BA3C'
+      break
+    case 'Task':
+    case 'Sub-task':
+      color = '#4BADE8'
+      break
+    case 'Epic':
+      color = '#904EE2'
+      break
+  }
+  return color
 }
 
 // // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
