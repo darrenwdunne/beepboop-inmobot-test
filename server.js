@@ -105,6 +105,9 @@ function getAttributesText (jiraIssue) {
   var text = jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName
   text += ' | ' + jiraIssue.fields.status.name + ' | ' + jiraIssue.fields.priority.name
   switch (jiraIssue.fields.priority.name) {
+    case 'Critical':
+      text += ' :jira-critical:'
+      break
     case 'High':
       text += ' :jira-high:'
       break
