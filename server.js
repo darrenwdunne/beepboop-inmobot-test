@@ -18,20 +18,16 @@ var slapp = Slapp({
   context: Context()
 })
 
-var HELP_TEXT = `
+var previousIssue = undefined
+
+// response to the user typing "help"
+slapp.message('help', ['mention', 'direct_message'], (msg) => {
+  msg.say(`
 I will respond to the following messages:
 \`help\` - to see this message
 \`(ra16-|mds-|px-|vm-|vnow-)1234\` - to fetch a JIRA issue (e.g. PX-1416 or VNOW-5081).
 \`rand\` - show me a random Low priority bug from the Spark Backlog
-`
-
-// *********************************************
-// Setup different handlers for messages
-// *********************************************
-
-// response to the user typing "help"
-slapp.message('help', ['mention', 'direct_message'], (msg) => {
-  msg.say(HELP_TEXT)
+`)
 })
 
 // return a random Spark low priority bug from the backlog
@@ -55,73 +51,77 @@ slapp.message(/(ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 
 })
 
 function outputMessage (msg, issueKey, introText) {
-  // these env vars are configured during bot installation and passed in during initialization
-  jira.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
-    var avatarUrl = null
-    if (jiraIssue.fields.assignee != null) {
-      avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
-    }
-    var color = 'good'
-    switch (jiraIssue.fields.issuetype.name) {
-      case 'Bug':
-      case 'Bug-task':
-        switch (jiraIssue.fields.priority.name) {
-          case 'Open':
-            color = 'good'
-            break
-          case 'High':
-            color = 'danger'
-            break
-          case 'Medium':
-            color = 'warning'
-            break
-        }
-        break
-      case 'Story':
-        color = '#63BA3C'
-        break
-      case 'Task':
-      case 'Sub-task':
-        color = '#4BADE8'
-        break
-      case 'Epic':
-        color = '#904EE2'
-        break
-    }
-    msg.say({
-      text: introText,
-      attachments: [{
-        text: '',
-        title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
-        thumb_url: avatarUrl,
-        title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
-        mrkdwn_in: ['fields'],
-        'fields': [
-          {
-            'title': 'Status',
-            'value': '`' + jiraIssue.fields.status.name + '`',
-            'short': true
-          },
-          // {
-          //   'title': 'Assignee',
-          //   'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
-          //   'short': true
-          // },
-          {
-            'title': 'Priority',
-            'value': '`' + jiraIssue.fields.priority.name + '`',
-            'short': true
+  if (previousIssue !== issueKey) {
+    // don't want to be "chatty" - if a user keeps mentioning a single issue, only report back on it once
+    previousIssue = issueKey
+    // these env vars are configured during bot installation and passed in during initialization
+    jira.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
+      var avatarUrl = null
+      if (jiraIssue.fields.assignee != null) {
+        avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
+      }
+      var color = 'good'
+      switch (jiraIssue.fields.issuetype.name) {
+        case 'Bug':
+        case 'Bug-task':
+          switch (jiraIssue.fields.priority.name) {
+            case 'Open':
+              color = 'good'
+              break
+            case 'High':
+              color = 'danger'
+              break
+            case 'Medium':
+              color = 'warning'
+              break
           }
-        ],
-        color: color
-      }]
+          break
+        case 'Story':
+          color = '#63BA3C'
+          break
+        case 'Task':
+        case 'Sub-task':
+          color = '#4BADE8'
+          break
+        case 'Epic':
+          color = '#904EE2'
+          break
+      }
+      msg.say({
+        text: introText,
+        attachments: [{
+          text: '',
+          title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
+          thumb_url: avatarUrl,
+          title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
+          mrkdwn_in: ['fields'],
+          'fields': [
+            {
+              'title': 'Status',
+              'value': '`' + jiraIssue.fields.status.name + '`',
+              'short': true
+            },
+            // {
+            //   'title': 'Assignee',
+            //   'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
+            //   'short': true
+            // },
+            {
+              'title': 'Priority',
+              'value': '`' + jiraIssue.fields.priority.name + '`',
+              'short': true
+            }
+          ],
+          color: color
+        }]
+      })
+    }).catch((err) => {
+      console.log(err)
+      msg.say({
+        text: "Sorry, couldn't find " + issueKey + ' :cry:'
+      })
     })
-  }).catch((err) => {
-    console.log(err)
-    msg.say({
-      text: "Sorry, couldn't find " + issueKey + ' :cry:'
-    })
-  })
+  }
 }
 
 // // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
