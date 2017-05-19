@@ -90,9 +90,10 @@ function outputMessage (msg, issueKey, introText) {
       msg.say({
         text: introText,
         attachments: [{
+          fallback: '',
           text: '',
           title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
-          thumb_url: avatarUrl,
+          // thumb_url: avatarUrl,
           author_name: jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
           author_icon: avatarUrl,
           title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
