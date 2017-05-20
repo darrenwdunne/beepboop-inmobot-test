@@ -51,7 +51,8 @@ slapp.message(/(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_messag
     var urlMatch = text.match(urlPattern)
     jira.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[0])
       .then(bbStr => {
-        outputMessage(msg, match[i].toUpperCase(), bbStr)
+        // outputMessage(msg, match[0].toUpperCase(), bbStr)
+        outputMessage(msg, match[0], '', 'Reviewers: ' + bbStr)
       })
   } else {
     // treat is as a regular text issue
@@ -59,12 +60,12 @@ slapp.message(/(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_messag
     // there may be multiple issues in the text
     for (var i = 0; i < match.length; i++) {
       const issueKey = match[i].toUpperCase()
-      outputMessage(msg, issueKey, '')
+      outputMessage(msg, issueKey, '', '')
     }
   }
 })
 
-function outputMessage (msg, issueKey, introText) {
+function outputMessage (msg, issueKey, introText, footerText) {
   if (previousIssue !== issueKey) {
     // don't want to be "chatty" - if a user keeps mentioning a single issue, only report back on it once
     previousIssue = issueKey
@@ -84,6 +85,7 @@ function outputMessage (msg, issueKey, introText) {
           // thumb_url: avatarUrl,
           author_name: getAttributesText(jiraIssue),
           author_icon: avatarUrl,
+          footer: footerText,
           title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
           // mrkdwn_in: ['fields'],
           // 'fields': [

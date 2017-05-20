@@ -51,7 +51,6 @@ module.exports.getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffU
         var projectURL = bitBucketDiffURL
         var projectSlug = projectURL.replace(process.env.BITBUCKET_DIFF_URL_PREFIX, '')
         projectSlug = projectSlug.substr(0, projectSlug.indexOf('/'))
-        console.log('projectSlug=' + projectSlug)
         // get the PR (it's the first number between slashes)
         projectURL.replace(projectSlug + '/', '')
 
@@ -65,9 +64,7 @@ module.exports.getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffU
         // this URL shows the activity (comments, history of reviewers, etc...)
         // const URL = process.env.BITBUCKET_URL + projectSlug + '/pullrequests/' + match[0] + '/activity'
         const URL = process.env.BITBUCKET_URL + projectSlug + '/pullrequests/' + match[0]
-        console.log(URL)
-        // const URL = 'https://api.bitbucket.org/2.0/repositories/inmotionnow/web-vnow/default-reviewers' // Forbidden
-        console.log('fetching pull requests URL: ' + URL)
+        // console.log('fetching pull requests URL: ' + URL)
         request(
           {
             url: URL,
@@ -82,8 +79,9 @@ module.exports.getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffU
               var jiraData = JSON.parse(results)
               var retStr = ''
               for (let participant of jiraData.participants) {
-                retStr += participant.approved ? ':jira-checkbox-checked:' : ':jira-checkbox:'
-                retStr += participant.user.display_name + '   '
+                retStr += participant.approved ? ':white_check_mark:' : ':white_medium_square:'
+                // lastname
+                retStr += ' ' + participant.user.display_name.split(' ')[1] + '   '
               }
               resolve(retStr)
             }
@@ -93,20 +91,3 @@ module.exports.getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffU
     }
   })
 }
-
-// console.log('Querying: ' + QUERY_STR)
-// console.time('query')
-// request(
-//     {
-//         url: URL,
-//         headers: {
-//             "Authorization": "Basic " + new Buffer(opt.username + ":" + opt.password).toString("base64")
-//         }
-//     },
-//     function (error, response, results) {
-//         // results is already json data
-//         var jiraData = JSON.parse(results)
-//         var changelog = jiraData.issues[0].changelog
-//         console.timeEnd('query')
-//     }
-// )
