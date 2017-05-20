@@ -40,13 +40,27 @@ slapp.message('rand', ['mention', 'direct_message'], (msg) => {
 // Respond to a JIRA issue (e.g. PX-1234)
 slapp.message(/(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 'ambient'], (msg) => {
   var text = (msg.body.event && msg.body.event.text) || ''
+  var prPattern = /pull-requests/ig
   var pattern = /(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/ig
+  var prMatch = text.match(prPattern)
   var match = text.match(pattern)
 
-  // there may be multiple issues in the text
-  for (var i = 0; i < match.length; i++) {
-    const issueKey = match[i].toUpperCase()
-    outputMessage(msg, issueKey, '')
+  if (prMatch.length > 0) {
+    // process as a pull request - need to extract the url that was pasted
+    var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/
+    var urlMatch = text.match(urlPattern)
+    jira.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[0])
+      .then(bbStr => {
+        outputMessage(msg, match[i].toUpperCase(), bbStr)
+      })
+  } else {
+    // treat is as a regular text issue
+
+    // there may be multiple issues in the text
+    for (var i = 0; i < match.length; i++) {
+      const issueKey = match[i].toUpperCase()
+      outputMessage(msg, issueKey, '')
+    }
   }
 })
 

@@ -19,3 +19,14 @@ config:
   info: JIRA P
   type: secret
   global: true
+- name: BITBUCKET_URL
+  friendly_name: BITBUCKET_URL
+  info: BITBUCKET_URL
+  type: secret
+  global: true
+- name: BITBUCKET_DIFF_URL_PREFIX
+  friendly_name: BITBUCKET_DIFF_URL_PREFIX
+  info: BITBUCKET_DIFF_URL_PREFIX
+  type: secret
+  global: true
+ 
