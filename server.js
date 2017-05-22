@@ -45,7 +45,7 @@ slapp.message(/(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_messag
   var prMatch = text.match(prPattern)
   var match = text.match(pattern)
 
-  if (prMatch !== undefined && prMatch.length > 0) {
+  if (prMatch !== null && prMatch.length > 0) {
     // process as a pull request - need to extract the url that was pasted
     var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/
     var urlMatch = text.match(urlPattern)
