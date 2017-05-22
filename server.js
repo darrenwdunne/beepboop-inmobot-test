@@ -23,9 +23,10 @@ var previousIssue = ''
 // response to the user typing "help"
 slapp.message('help', ['mention', 'direct_message'], (msg) => {
   msg.say(`
-I will respond to the following messages:
+Howdy! I will respond to the following messages:
 \`help\` - to see this message
-\`(ra16-|mds-|px-|vm-|vnow-)1234\` - to fetch a JIRA issue (e.g. PX-1416 or VNOW-5081).
+\`(cs-|ra16-|mds-|px-|vm-|vnow-)1234\` - to fetch a JIRA issue (e.g. PX-1416 or VNOW-5081).
+\`(bitbucket pull request url)\` - to fetch the related issue, and current status of approvers (e.g. https://bitbucket.org/inmotionnow/web-vnow/pull-requests/248/petr-vnow-3774-develop/diff)
 \`rand\` - show me a random Low priority bug from the Spark Backlog
 `)
 })
@@ -51,6 +52,10 @@ slapp.message(/(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_messag
     var urlMatch = text.match(urlPattern)
     jira.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[0])
       .then(bbStr => {
+        // what if user posted PX-123 and then a separate PR url? Need to make sure we only return the text for the pr (not the random issue number)
+        if (match.length > 1) {
+          match = urlMatch[0].match(pattern)
+        }
         // outputMessage(msg, match[0].toUpperCase(), bbStr)
         outputMessage(msg, match[0], '', 'Reviewers: ' + bbStr)
       })
