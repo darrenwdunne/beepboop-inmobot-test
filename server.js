@@ -18,7 +18,8 @@ var slapp = Slapp({
   context: Context()
 })
 
-const msgQuitFeatureResponses = ['A day may come when we create a Feature, but it is *_Not This Day!_*`', "Fine! Didn't want your Feature anyway!", 'No Feature for You!']
+const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!', "Create a Feature? Let's do it!"]
+const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_*', "Fine! Didn't want your Feature anyway!", 'No Feature for You!']
 
 var previousIssue = ''
 
@@ -180,27 +181,25 @@ function getColor (issuetype, priority) {
 }
 
 // "Conversation" flow that tracks state - kicks off when user says feature
-slapp
-  .message('feature', ['direct_mention', 'direct_message'], (msg) => {
-    var state = { requested: Date.now() }
-    msg.say({
-      text: "Let's open a feature!",
-      attachments: [
-        {
-          text: 'Is this for a customer?',
-          fallback: 'Is this for a customer?',
-          callback_id: 'doit_confirm_callback', // unused?
-          actions: [
-            { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
-            { name: 'answer', text: 'No', type: 'button', value: 'no' },
-            { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
-          ]
-        }]
-    })
-      // handle the response with this route passing state
-      // and expiring the conversation after 60 seconds
-      .route('handleCustomerConfirmation', state, 60)
+slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
+  var state = { requested: Date.now() }
+  msg.say({
+    text: MSG_FEATURE_INTRO,
+    attachments: [
+      {
+        text: 'Is this for a customer?',
+        fallback: 'Is this for a customer?',
+        callback_id: 'doit_confirm_callback', // unused?
+        actions: [
+          { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
+          { name: 'answer', text: 'No', type: 'button', value: 'no' },
+          { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
+        ]
+      }]
   })
+    // handle the response with this route passing state and expiring the conversation after 60 seconds
+    .route('handleCustomerConfirmation', state, 60)
+})
 
 slapp.route('handleCustomerConfirmation', (msg, state) => {
   // if they respond with anything other than a button selection, get them back on track
@@ -259,7 +258,7 @@ slapp.route('handleSummary', (msg, state) => {
   // TODO: handle quit
   var text = (msg.body.event && msg.body.event.text) || ''
   if (text === 'quit') {
-    msg.say(msgQuitFeatureResponses)
+    msg.say(MSG_QUIT_FEATURE_RESPONSES)
     return
   }
 
