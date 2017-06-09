@@ -179,7 +179,7 @@ function getColor (issuetype, priority) {
 
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
 slapp
-  .message('feature', ['direct_mention', 'direct_message'], (msg) => {
+  .message('feature', ['direct_mention', 'direct_message'], (msg, text) => {
     msg
       .say(`You want to open a feature? Who is the customer?`)
       // sends next event from user to this route, passing along state
