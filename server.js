@@ -49,7 +49,7 @@ slapp.message(/(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_messag
 
   if (prMatch !== null && prMatch.length > 0) {
     // process as a pull request - need to extract the url that was pasted
-    var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/  // eslint-disable-line
+    var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/ // eslint-disable-line
     var urlMatch = text.match(urlPattern)
     jira.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[0])
       .then(bbStr => {
@@ -181,61 +181,76 @@ function getColor (issuetype, priority) {
 slapp
   .message('feature', ['direct_mention', 'direct_message'], (msg) => {
     var state = { requested: Date.now() }
-    // respond with an interactive message with buttons Yes and No
-    msg
-      // .say("You want to open a feature - let's do it!")
-      .say({
-        text: 'You want to open a feature - let\'s do it!',
-        attachments: [
-          {
-            text: 'Is this for a customer?',
-            fallback: 'Are you sure?',
-            callback_id: 'doit_confirm_callback', // unused?
-            actions: [
-              { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
-              { name: 'answer', text: 'No', type: 'button', value: 'no' },
-              { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
-            ]
-          }]
-      })
+    msg.say({
+      text: "Let's open a feature!",
+      attachments: [
+        {
+          text: 'Is this for a customer?',
+          fallback: 'Is this for a customer?',
+          callback_id: 'doit_confirm_callback', // unused?
+          actions: [
+            { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
+            { name: 'answer', text: 'No', type: 'button', value: 'no' },
+            { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
+          ]
+        }]
+    })
       // handle the response with this route passing state
       // and expiring the conversation after 60 seconds
       .route('handleCustomerConfirmation', state, 60)
   })
 
 slapp.route('handleCustomerConfirmation', (msg, state) => {
-  // if they respond with anything other than a button selection,
-  // get them back on track
+  // if they respond with anything other than a button selection, get them back on track
   if (msg.type !== 'action') {
     msg
       .say('Please choose a Yes, No, or Cancel button :wink:')
-      // notice we have to declare the next route to handle the response
-      // every time. Pass along the state and expire the conversation
-      // 60 seconds from now.
+      // notice we have to declare the next route to handle the response every time. Pass along the state and expire the conversation 60 seconds from now.
       .route('handleCustomerConfirmation', state, 60)
     return
   }
 
   let answer = msg.body.actions[0].value
 
-  if (answer === 'cancel') {
-    msg.respond(msg.body.response_url, {
-      text: `OK, not creating a new feature.`,
-      delete_original: true
-    })
-    // notice we did NOT specify a route because the conversation is over
-    return
-  } else if (answer === 'yes') {
-    msg.respond(msg.body.response_url, {
-      text: "Who's the customer?",
-      delete_original: true
-    })
-  } else if (answer === 'no') {
-    msg.respond(msg.body.response_url, {
-      text: 'No customer',
-      delete_original: true
-    })
+  switch (answer) {
+    case 'cancel':
+      msg.respond(msg.body.response_url, {
+        text: `OK, not creating a new feature.`,
+        delete_original: true
+      })
+      // notice we did NOT specify a route because the conversation is over
+      return
+    case 'yes':
+      msg.respond(msg.body.response_url, {
+        text: "Who's the customer?",
+        delete_original: true
+      })
+      break
+    case 'no':
+      msg.respond(msg.body.response_url, {
+        text: 'No customer',
+        delete_original: true
+      })
+      break
   }
+  // if (answer === 'cancel') {
+  //   msg.respond(msg.body.response_url, {
+  //     text: `OK, not creating a new feature.`,
+  //     delete_original: true
+  //   })
+  //   // notice we did NOT specify a route because the conversation is over
+  //   return
+  // } else if (answer === 'yes') {
+  //   msg.respond(msg.body.response_url, {
+  //     text: "Who's the customer?",
+  //     delete_original: true
+  //   })
+  // } else if (answer === 'no') {
+  //   msg.respond(msg.body.response_url, {
+  //     text: 'No customer',
+  //     delete_original: true
+  //   })
+  // }
 
   // use the state that's been passed through the flow to figure out the
   // elapsed time
