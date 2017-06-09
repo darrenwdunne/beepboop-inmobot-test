@@ -185,7 +185,7 @@ slapp
     msg
       // .say("You want to open a feature - let's do it!")
       .say({
-        text: '',
+        text: 'You want to open a feature - let\'s do it!',
         attachments: [
           {
             text: 'Is this for a customer?',
