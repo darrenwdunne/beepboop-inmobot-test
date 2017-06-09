@@ -19,7 +19,7 @@ var slapp = Slapp({
 })
 
 const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!', "Create a Feature? Let's do it!"]
-const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_*', "Fine! Didn't want your Feature anyway!", 'No Feature for You!']
+const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You!']
 
 var previousIssue = ''
 
