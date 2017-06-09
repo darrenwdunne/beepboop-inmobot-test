@@ -226,47 +226,14 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
         delete_original: true
       })
         .route('handleCustomerName', state, 60)
-
       break
     case 'no':
-      msg.respond(msg.body.response_url, {
-        text: 'Give me a one-line Summary',
+      msg.respond(msg.body.response_url, { // Always delete original to make the buttons go away
         delete_original: true
       })
         .route('handleSummary', state, 60)
       break
   }
-  // if (answer === 'cancel') {
-  //   msg.respond(msg.body.response_url, {
-  //     text: `OK, not creating a new feature.`,
-  //     delete_original: true
-  //   })
-  //   // notice we did NOT specify a route because the conversation is over
-  //   return
-  // } else if (answer === 'yes') {
-  //   msg.respond(msg.body.response_url, {
-  //     text: "Who's the customer?",
-  //     delete_original: true
-  //   })
-  // } else if (answer === 'no') {
-  //   msg.respond(msg.body.response_url, {
-  //     text: 'No customer',
-  //     delete_original: true
-  //   })
-  // }
-
-  // use the state that's been passed through the flow to figure out the
-  // elapsed time
-  var elapsed = (Date.now() - state.requested) / 1000
-  msg.respond(msg.body.response_url, {
-    text: `You requested me to do it ${elapsed} seconds ago`,
-    delete_original: true
-  })
-
-  // simulate doing some work and send a confirmation.
-  setTimeout(() => {
-    msg.say('I "did it"')
-  }, 3000)
 })
 
 slapp.route('handleCustomerName', (msg, state) => {
@@ -282,7 +249,7 @@ slapp.route('handleCustomerName', (msg, state) => {
   // add their response to state
   state.customerName = text
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
-    .say('Give me a one-line Summary')
+    .say('Give me a one-line Summary (or type `quit` to stop creating the feature request)')
     .route('handleSummary', state, 60)
 })
 
