@@ -215,7 +215,7 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
   switch (answer) {
     case 'cancel':
       msg.respond(msg.body.response_url, {
-        text: `OK, not creating a new feature.`,
+        text: `A day may come when we create a Feature, but it is *_Not This Day!_*`,
         delete_original: true
       })
       // notice we did NOT specify a route because the conversation is over
