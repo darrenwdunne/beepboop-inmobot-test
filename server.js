@@ -19,7 +19,7 @@ var slapp = Slapp({
 })
 
 const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!', "Create a Feature? Let's do it!"]
-const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You!']
+const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
 
 var previousIssue = ''
 
@@ -256,7 +256,6 @@ slapp.route('handleCustomerName', (msg, state) => {
 })
 
 slapp.route('handleSummary', (msg, state) => {
-  // TODO: handle quit
   var text = (msg.body.event && msg.body.event.text) || ''
   if (text === 'quit') {
     msg.say(MSG_QUIT_FEATURE_RESPONSES)
@@ -277,8 +276,11 @@ slapp.route('handleSummary', (msg, state) => {
 })
 
 slapp.route('handleDescription', (msg, state) => {
-  // TODO: handle quit
   var text = (msg.body.event && msg.body.event.text) || ''
+  if (text === 'quit') {
+    msg.say(MSG_QUIT_FEATURE_RESPONSES)
+    return
+  }
   state.descriptionText = text
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
 })
