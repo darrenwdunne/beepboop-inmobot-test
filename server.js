@@ -254,6 +254,7 @@ slapp.route('handleCustomerName', (msg, state) => {
 })
 
 slapp.route('handleSummary', (msg, state) => {
+  // TODO: handle quit
   var text = (msg.body.event && msg.body.event.text) || ''
 
   // user may not have typed text as their next action, ask again and re-route
@@ -265,11 +266,14 @@ slapp.route('handleSummary', (msg, state) => {
 
   // add their response to state
   state.summaryText = text
-  msg.say('Thanks, got your Summary!')
-  .route('handleConclusion', state, 60)
+  msg.say('Now enter the Description text (hit Shift-Enter for multiple lines), or type `quit` to stop creating the feature request')
+    .route('handleDescription', state, 60)
 })
 
-slapp.route('handleConclusion', (msg, state) => {
+slapp.route('handleDescription', (msg, state) => {
+  // TODO: handle quit
+  var text = (msg.body.event && msg.body.event.text) || ''
+  state.descriptionText = text
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
 })
 
