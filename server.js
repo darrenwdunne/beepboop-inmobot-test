@@ -184,20 +184,20 @@ function getColor (issuetype, priority) {
 slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
   var state = { requested: Date.now() }
   msg.say(MSG_FEATURE_INTRO)
-  .say({
-    text: '',
-    attachments: [
-      {
-        text: 'Is this for a customer?',
-        fallback: 'Is this for a customer?',
-        callback_id: 'doit_confirm_callback', // unused?
-        actions: [
-          { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
-          { name: 'answer', text: 'No', type: 'button', value: 'no' },
-          { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
-        ]
-      }]
-  })
+    .say({
+      text: '',
+      attachments: [
+        {
+          text: 'Is this for a customer?',
+          fallback: 'Is this for a customer?',
+          callback_id: 'doit_confirm_callback', // unused?
+          actions: [
+            { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
+            { name: 'answer', text: 'No', type: 'button', value: 'no' },
+            { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
+          ]
+        }]
+    })
     // handle the response with this route passing state and expiring the conversation after 60 seconds
     .route('handleCustomerConfirmation', state, 60)
 })
@@ -217,9 +217,9 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
   switch (answer) {
     case 'cancel':
       msg.respond(msg.body.response_url, {
-        text: `A day may come when we create a Feature, but it is *_Not This Day!_*`,
         delete_original: true
       })
+        .say(MSG_QUIT_FEATURE_RESPONSES)
       // notice we did NOT specify a route because the conversation is over
       return
     case 'yes':
