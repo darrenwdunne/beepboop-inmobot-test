@@ -183,8 +183,9 @@ function getColor (issuetype, priority) {
 // "Conversation" flow that tracks state - kicks off when user says feature
 slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
   var state = { requested: Date.now() }
-  msg.say({
-    text: MSG_FEATURE_INTRO,
+  msg.say(MSG_FEATURE_INTRO)
+  .say({
+    text: '',
     attachments: [
       {
         text: 'Is this for a customer?',
