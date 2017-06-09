@@ -225,14 +225,15 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
         text: "Who's the customer?",
         delete_original: true
       })
-        .route('handleCustomerName', state)
+        .route('handleCustomerName', state, 60)
 
       break
     case 'no':
       msg.respond(msg.body.response_url, {
-        text: 'No customer',
+        text: 'Give me a one-line Summary',
         delete_original: true
       })
+        .route('handleSummary', state, 60)
       break
   }
   // if (answer === 'cancel') {
@@ -280,6 +281,28 @@ slapp.route('handleCustomerName', (msg, state) => {
 
   // add their response to state
   state.customerName = text
+  msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
+
+  msg.respond(msg.body.response_url, {
+    text: 'Give me a one-line Summary',
+    delete_original: true
+  })
+    .route('handleSummary', state, 60)
+})
+
+slapp.route('handleSummary', (msg, state) => {
+  var text = (msg.body.event && msg.body.event.text) || ''
+
+  // user may not have typed text as their next action, ask again and re-route
+  if (!text) {
+    return msg
+      .say("I'm eagerly awaiting to hear the customer name.")
+      .route('handleCustomerName', state)
+  }
+
+  // add their response to state
+  state.customerName = text
+  msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
 })
 
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
