@@ -178,23 +178,22 @@ function getColor (issuetype, priority) {
 }
 
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
-slapp.message('^(feature)$', ['direct_mention', 'direct_message'], (msg) => {
-  msg.say(['You want to open a feature? I can help with that! \nWho is the customer?',
-    "You want to open a feature? Let's do it! \nWho is the customer?",
-    'You want to open a feature? You bet! \nWho is the customer?',
-    'You want to open a feature? Here we go! \nWho is the customer?'])
-    // sends next event from user to this route, passing along state
-    .route('customer', { greeting: text })
-})
-  .route('customer', (msg, state) => {
+slapp
+  .message('^(hi|hello|hey)$', ['direct_mention', 'direct_message'], (msg, text) => {
+    msg
+      .say(`${text}, how are you?`)
+      // sends next event from user to this route, passing along state
+      .route('how-are-you', { greeting: text })
+  })
+  .route('how-are-you', (msg, state) => {
     var text = (msg.body.event && msg.body.event.text) || ''
 
     // user may not have typed text as their next action, ask again and re-route
     if (!text) {
       return msg
-        .say("Whoops, I'm still waiting to hear the customer.")
+        .say("Whoops, I'm still waiting to hear how you're doing.")
         .say('How are you?')
-        .route('customer', state)
+        .route('how-are-you', state)
     }
 
     // add their response to state
