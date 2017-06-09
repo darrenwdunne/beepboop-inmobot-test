@@ -259,8 +259,8 @@ slapp.route('handleSummary', (msg, state) => {
   // user may not have typed text as their next action, ask again and re-route
   if (!text) {
     return msg
-      .say("I'm eagerly awaiting to hear the customer name.")
-      .route('handleCustomerName', state)
+      .say("I'm eagerly awaiting to hear the Summary")
+      .route('handleSummary', state)
   }
 
   // add their response to state
