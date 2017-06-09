@@ -265,7 +265,8 @@ slapp.route('handleSummary', (msg, state) => {
 
   // add their response to state
   state.summaryText = text
-  msg.route('handleConclusion', state, 60)
+  msg.say('Thanks, got your Summary!')
+  .route('handleConclusion', state, 60)
 })
 
 slapp.route('handleConclusion', (msg, state) => {
