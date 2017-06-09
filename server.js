@@ -179,56 +179,64 @@ function getColor (issuetype, priority) {
 
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
 slapp
-  .message('feature', ['direct_mention', 'direct_message'], (msg, text) => {
-    msg.say('You want to open a feature!  Is this for a customer?')
+  .message('feature', ['direct_mention', 'direct_message'], (msg) => {
+    var state = { requested: Date.now() }
+    // respond with an interactive message with buttons Yes and No
+    msg
       .say({
         text: '',
         attachments: [
           {
-            text: '',
-            fallback: 'Yes or No?',
-            callback_id: 'yesno_callback',
+            text: 'Is this for a customer?',
+            fallback: 'Are you sure?',
+            callback_id: 'doit_confirm_callback', // unused?
             actions: [
               { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
               { name: 'answer', text: 'No', type: 'button', value: 'no' }
             ]
           }]
       })
-      // sends next event from user to this route, passing along state
-      .route('customer', { greeting: text })
+      // handle the response with this route passing state
+      // and expiring the conversation after 60 seconds
+      .route('handleCustomerConfirmation', state, 60)
   })
-  .route('customer', (msg, state) => {
-    var text = (msg.body.event && msg.body.event.text) || ''
 
-    // user may not have typed text as their next action, ask again and re-route
-    if (!text) {
-      return msg.say("Whoops, I'm still waiting to hear how you're doing.")
-        .say('How are you?')
-        .route('customer', state)
-    }
-    // add their response to state
-    state.status = text
-    msg.say(`Ok then. What's your favorite color?`)
-      .route('color', state)
-  })
-  .route('color', (msg, state) => {
-    var text = (msg.body.event && msg.body.event.text) || ''
-
-    // user may not have typed text as their next action, ask again and re-route
-    if (!text) {
-      return msg.say("I'm eagerly awaiting to hear your favorite color.")
-        .route('color', state)
-    }
-    // add their response to state
-    state.color = text
+slapp.route('handleCustomerConfirmation', (msg, state) => {
+  // if they respond with anything other than a button selection,
+  // get them back on track
+  if (msg.type !== 'action') {
     msg
-      .say('Thanks for sharing.')
-      .say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
-  // At this point, since we don't route anywhere, the "conversation" is over
-})
+      .say('Please choose a Yes or No button :wink:')
+      // notice we have to declare the next route to handle the response
+      // every time. Pass along the state and expire the conversation
+      // 60 seconds from now.
+      .route('handleCustomerConfirmation', state, 60)
+    return
+  }
 
-slapp.action('yesno_callback', 'answer', (msg, value) => {
-  msg.respond(msg.body.response_url, `${value} is a good choice!`)
+  let answer = msg.body.actions[0].value
+  if (answer !== 'yes') {
+    // the answer was not affirmative
+    msg.respond(msg.body.response_url, {
+      text: `OK, not doing it. Whew that was close :cold_sweat:`,
+      delete_original: true
+    })
+    // notice we did NOT specify a route because the conversation is over
+    return
+  }
+
+  // use the state that's been passed through the flow to figure out the
+  // elapsed time
+  var elapsed = (Date.now() - state.requested) / 1000
+  msg.respond(msg.body.response_url, {
+    text: `You requested me to do it ${elapsed} seconds ago`,
+    delete_original: true
+  })
+
+  // simulate doing some work and send a confirmation.
+  setTimeout(() => {
+    msg.say('I "did it"')
+  }, 3000)
 })
 
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
