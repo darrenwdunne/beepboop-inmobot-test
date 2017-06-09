@@ -18,6 +18,8 @@ var slapp = Slapp({
   context: Context()
 })
 
+const msgQuitFeatureResponses = ['A day may come when we create a Feature, but it is *_Not This Day!_*`', "Fine! Didn't want your Feature anyway!", 'No Feature for You!']
+
 var previousIssue = ''
 
 // response to the user typing "help"
@@ -257,7 +259,7 @@ slapp.route('handleSummary', (msg, state) => {
   // TODO: handle quit
   var text = (msg.body.event && msg.body.event.text) || ''
   if (text === 'quit') {
-    msg.say(`A day may come when we create a Feature, but it is *_Not This Day!_*`)
+    msg.say(msgQuitFeatureResponses)
     return
   }
 
