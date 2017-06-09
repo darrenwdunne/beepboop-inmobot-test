@@ -256,6 +256,10 @@ slapp.route('handleCustomerName', (msg, state) => {
 slapp.route('handleSummary', (msg, state) => {
   // TODO: handle quit
   var text = (msg.body.event && msg.body.event.text) || ''
+  if (text === 'quit') {
+    msg.say(`A day may come when we create a Feature, but it is *_Not This Day!_*`)
+    return
+  }
 
   // user may not have typed text as their next action, ask again and re-route
   if (!text) {
