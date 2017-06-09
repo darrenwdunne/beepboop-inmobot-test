@@ -177,7 +177,7 @@ function getColor (issuetype, priority) {
   return color
 }
 
-// "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
+// "Conversation" flow that tracks state - kicks off when user says feature
 slapp
   .message('feature', ['direct_mention', 'direct_message'], (msg) => {
     var state = { requested: Date.now() }
@@ -225,6 +225,8 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
         text: "Who's the customer?",
         delete_original: true
       })
+        .route('handleCustomerName', state)
+
       break
     case 'no':
       msg.respond(msg.body.response_url, {
@@ -264,6 +266,20 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
   setTimeout(() => {
     msg.say('I "did it"')
   }, 3000)
+})
+
+slapp.route('handleCustomerName', (msg, state) => {
+  var text = (msg.body.event && msg.body.event.text) || ''
+
+  // user may not have typed text as their next action, ask again and re-route
+  if (!text) {
+    return msg
+      .say("I'm eagerly awaiting to hear the customer name.")
+      .route('handleCustomerName', state)
+  }
+
+  // add their response to state
+  state.customerName = text
 })
 
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
