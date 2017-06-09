@@ -282,11 +282,10 @@ slapp.route('handleCustomerName', (msg, state) => {
   // add their response to state
   state.customerName = text
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
-
-  msg.respond(msg.body.response_url, {
-    text: 'Give me a one-line Summary',
-    delete_original: true
-  })
+    .respond(msg.body.response_url, {
+      text: 'Give me a one-line Summary',
+      delete_original: true
+    })
     .route('handleSummary', state, 60)
 })
 
@@ -301,7 +300,7 @@ slapp.route('handleSummary', (msg, state) => {
   }
 
   // add their response to state
-  state.customerName = text
+  state.summaryText = text
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
 })
 
