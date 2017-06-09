@@ -231,6 +231,7 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
       msg.respond(msg.body.response_url, { // Always delete original to make the buttons go away
         delete_original: true
       })
+        .say('Give me a one-line Feature Summary (or type `quit` to stop creating the feature request)')
         .route('handleSummary', state, 60)
       break
   }
@@ -248,8 +249,7 @@ slapp.route('handleCustomerName', (msg, state) => {
 
   // add their response to state
   state.customerName = text
-  msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
-    .say('Give me a one-line Summary (or type `quit` to stop creating the feature request)')
+  msg.say('Give me a one-line Feature Summary (or type `quit` to stop creating the feature request)')
     .route('handleSummary', state, 60)
 })
 
@@ -265,6 +265,10 @@ slapp.route('handleSummary', (msg, state) => {
 
   // add their response to state
   state.summaryText = text
+  msg.route('handleConclusion', state, 60)
+})
+
+slapp.route('handleConclusion', (msg, state) => {
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
 })
 
