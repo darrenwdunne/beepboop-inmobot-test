@@ -180,8 +180,20 @@ function getColor (issuetype, priority) {
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
 slapp
   .message('feature', ['direct_mention', 'direct_message'], (msg, text) => {
-    msg
-      .say(`You want to open a feature? Who is the customer?`)
+    msg.say('You want to open a feature!  Is this for a customer?')
+      .say({
+        text: '',
+        attachments: [
+          {
+            text: '',
+            fallback: 'Yes or No?',
+            callback_id: 'yesno_callback',
+            actions: [
+              { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
+              { name: 'answer', text: 'No', type: 'button', value: 'no' }
+            ]
+          }]
+      })
       // sends next event from user to this route, passing along state
       .route('customer', { greeting: text })
   })
@@ -190,17 +202,13 @@ slapp
 
     // user may not have typed text as their next action, ask again and re-route
     if (!text) {
-      return msg
-        .say("Whoops, I'm still waiting to hear how you're doing.")
+      return msg.say("Whoops, I'm still waiting to hear how you're doing.")
         .say('How are you?')
         .route('customer', state)
     }
-
     // add their response to state
     state.status = text
-
-    msg
-      .say(`Ok then. What's your favorite color?`)
+    msg.say(`Ok then. What's your favorite color?`)
       .route('color', state)
   })
   .route('color', (msg, state) => {
@@ -208,20 +216,20 @@ slapp
 
     // user may not have typed text as their next action, ask again and re-route
     if (!text) {
-      return msg
-        .say("I'm eagerly awaiting to hear your favorite color.")
+      return msg.say("I'm eagerly awaiting to hear your favorite color.")
         .route('color', state)
     }
-
     // add their response to state
     state.color = text
-
     msg
       .say('Thanks for sharing.')
       .say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
   // At this point, since we don't route anywhere, the "conversation" is over
-  })
+})
 
+slapp.action('yesno_callback', 'answer', (msg, value) => {
+  msg.respond(msg.body.response_url, `${value} is a good choice!`)
+})
 
 // "Conversation" flow that tracks state - kicks off when user says hi, hello or hey
 slapp
