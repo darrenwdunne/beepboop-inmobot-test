@@ -183,7 +183,7 @@ slapp
     var state = { requested: Date.now() }
     // respond with an interactive message with buttons Yes and No
     msg
-      .say("You want to open a feature - let's do it!")
+      // .say("You want to open a feature - let's do it!")
       .say({
         text: '',
         attachments: [
