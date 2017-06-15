@@ -214,13 +214,13 @@ slapp.route('handleComponentSelection', (msg, state) => {
       .route('handleComponentSelection', state, 60)
     return
   }
+  msg.respond(msg.body.response_url, { delete_original: true })
 
   let answer = msg.body.actions[0].value
 
   switch (answer) {
     case 'cancel':
-      msg.respond(msg.body.response_url, { delete_original: true })
-        .say(MSG_QUIT_FEATURE_RESPONSES) // notice we did NOT specify a route because the conversation is over
+      msg.say(MSG_QUIT_FEATURE_RESPONSES) // notice we did NOT specify a route because the conversation is over
       return
     default:
       state.component = answer
