@@ -18,7 +18,8 @@ var slapp = Slapp({
   context: Context()
 })
 
-const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!', "Create a Feature? Let's do it!"]
+const MSG_QUIT_FEATURE_PROMPT = '\n(or type `quit` to stop creating the feature request)'
+const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', "Create a Feature? Let's do it!"]
 const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
 
 var previousIssue = ''
@@ -216,24 +217,16 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
 
   switch (answer) {
     case 'cancel':
-      msg.respond(msg.body.response_url, {
-        delete_original: true
-      })
-        .say(MSG_QUIT_FEATURE_RESPONSES)
-      // notice we did NOT specify a route because the conversation is over
+      msg.respond(msg.body.response_url, { delete_original: true })
+        .say(MSG_QUIT_FEATURE_RESPONSES) // notice we did NOT specify a route because the conversation is over
       return
     case 'yes':
-      msg.respond(msg.body.response_url, {
-        text: "Who's the customer?",
-        delete_original: true
-      })
+      msg.respond(msg.body.response_url, { text: "Who's the customer?", delete_original: true })
         .route('handleCustomerName', state, 60)
       break
     case 'no':
-      msg.respond(msg.body.response_url, { // Always delete original to make the buttons go away
-        delete_original: true
-      })
-        .say('Give me a one-line Feature Summary (or type `quit` to stop creating the feature request)')
+      msg.respond(msg.body.response_url, { delete_original: true })
+        .say('Give me a one-line Feature Summary' + MSG_QUIT_FEATURE_PROMPT)
         .route('handleSummary', state, 60)
       break
   }
@@ -241,37 +234,27 @@ slapp.route('handleCustomerConfirmation', (msg, state) => {
 
 slapp.route('handleCustomerName', (msg, state) => {
   var text = (msg.body.event && msg.body.event.text) || ''
-
-  // user may not have typed text as their next action, ask again and re-route
-  if (!text) {
-    return msg
-      .say("I'm eagerly awaiting to hear the customer name.")
-      .route('handleCustomerName', state)
+  if (!text) { // user may not have typed text as their next action, ask again and re-route
+    return msg.say("I'm eagerly awaiting to hear the customer name.").route('handleCustomerName', state)
+  } else if (text === 'quit') {
+    return msg.say(MSG_QUIT_FEATURE_RESPONSES)
   }
 
-  // add their response to state
   state.customerName = text
-  msg.say("Got it, we're creating a feature for " + text + '.\nPlease give me a one-line Feature Summary (or type `quit` to stop)')
+  msg.say("Got it, we're creating a feature for " + text + '.\nPlease give me a one-line Feature Summary' + MSG_QUIT_FEATURE_PROMPT)
     .route('handleSummary', state, 60)
 })
 
 slapp.route('handleSummary', (msg, state) => {
   var text = (msg.body.event && msg.body.event.text) || ''
-  if (text === 'quit') {
-    msg.say(MSG_QUIT_FEATURE_RESPONSES)
-    return
+  if (!text) { // user may not have typed text as their next action, ask again and re-route
+    return msg.say("I'm eagerly awaiting to hear the Summary").route('handleSummary', state)
+  } else if (text === 'quit') {
+    return msg.say(MSG_QUIT_FEATURE_RESPONSES)
   }
 
-  // user may not have typed text as their next action, ask again and re-route
-  if (!text) {
-    return msg
-      .say("I'm eagerly awaiting to hear the Summary")
-      .route('handleSummary', state)
-  }
-
-  // add their response to state
   state.summaryText = text
-  msg.say('Now enter the Description text (hit Shift-Enter for multiple lines), or type `quit` to stop creating the feature request')
+  msg.say('Now enter the Description text (hit Shift-Enter for multiple lines). Hit Enter when done' + MSG_QUIT_FEATURE_PROMPT)
     .route('handleDescription', state, 60)
 })
 
