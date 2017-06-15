@@ -184,21 +184,63 @@ function getColor (issuetype, priority) {
 // "Conversation" flow that tracks state - kicks off when user says feature
 slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
   var state = { requested: Date.now() }
+
   msg.say(MSG_FEATURE_INTRO)
     .say({
       text: '',
       attachments: [
         {
-          text: 'Is this for a customer?',
-          fallback: 'Is this for a customer?',
+          text: 'Which component is this for? (if in doubt, just select `inMotion`)',
+          fallback: 'Which component is this for?',
           callback_id: 'doit_confirm_callback', // unused?
           actions: [
-            { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
-            { name: 'answer', text: 'No', type: 'button', value: 'no' },
+            { name: 'answer', text: 'Proximus', type: 'button', value: 'Proximus' },
+            { name: 'answer', text: 'R + A', type: 'button', value: 'R + A' },
+            { name: 'answer', text: 'Mobile', type: 'button', value: 'Mobile' },
+            { name: 'answer', text: 'inMotion', type: 'button', value: 'inMotion' },
             { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
           ]
         }]
     })
+    .route('handleComponentSelection', state, 60)
+})
+
+slapp.route('handleComponentSelection', (msg, state) => {
+  // if they respond with anything other than a button selection, get them back on track
+  if (msg.type !== 'action') {
+    msg
+      .say('Please choose a Component button :wink:')
+      // notice we have to declare the next route to handle the response every time. Pass along the state and expire the conversation 60 seconds from now.
+      .route('handleComponentSelection', state, 60)
+    return
+  }
+
+  let answer = msg.body.actions[0].value
+
+  switch (answer) {
+    case 'cancel':
+      msg.respond(msg.body.response_url, { delete_original: true })
+        .say(MSG_QUIT_FEATURE_RESPONSES) // notice we did NOT specify a route because the conversation is over
+      return
+    default:
+      state.component = answer
+      break
+  }
+
+  msg.say({
+    text: '',
+    attachments: [
+      {
+        text: 'Is this for a customer?',
+        fallback: 'Is this for a customer?',
+        callback_id: 'doit_confirm_callback', // unused?
+        actions: [
+          { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
+          { name: 'answer', text: 'No', type: 'button', value: 'no' },
+          { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
+        ]
+      }]
+  })
     // handle the response with this route passing state and expiring the conversation after 60 seconds
     .route('handleCustomerConfirmation', state, 60)
 })
