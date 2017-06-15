@@ -251,7 +251,7 @@ slapp.route('handleCustomerName', (msg, state) => {
 
   // add their response to state
   state.customerName = text
-  msg.say('Give me a one-line Feature Summary (or type `quit` to stop creating the feature request)')
+  msg.say("Got it, we're creating a feature for " + text + '.\nPlease give me a one-line Feature Summary (or type `quit` to stop)')
     .route('handleSummary', state, 60)
 })
 
