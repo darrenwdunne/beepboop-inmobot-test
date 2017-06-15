@@ -7,7 +7,7 @@ if (process.env.JIRA_URL.startsWith('https://')) {
   }
 }
 
-console.log('process.env.JIRAHOST=[' + process.env.JIRAHOST + ']')
+// console.log('process.env.JIRAHOST=[' + process.env.JIRAHOST + ']')
 
 var jira = new JiraApi({
   protocol: 'https',
@@ -150,12 +150,31 @@ module.exports.config = function (slapp) {
     }
     state.descriptionText = text
     msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
-    jira.findIssue('REL-109')
-      .then(issue => {
-        msg.say(`JIRA Status of REL-109: ${issue.fields.status.name}`)
-      })
-      .catch(err => {
-        console.error(err)
-      })
+    createIssueInJIRA(state)
   })
 }
+
+function createIssueInJIRA (state) {
+  jira.addNewIssue({
+    fields: {
+      project: {key: 'CLW'},
+      issuetype: {name: 'Task'},
+      summary: state.summaryText,
+      description: state.descriptionText,
+      assignee: {name: 'ddunne'},
+      labels: ['inMoBot']
+    }
+  })
+    .then(issue => {
+      var issueKey = issue.key
+      console.log('Issue created: ' + issueKey)
+    })
+}
+
+// jira.findIssue('REL-109')
+//   .then(issue => {
+//     msg.say(`JIRA Status of REL-109: ${issue.fields.status.name}`)
+//   })
+//   .catch(err => {
+//     console.error(err)
+//   })
