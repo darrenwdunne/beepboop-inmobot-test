@@ -143,7 +143,7 @@ module.exports.config = function (slapp) {
     msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
     jira.findIssue('REL-109')
       .then(issue => {
-        console.log(`JIRA Status of REL-109: ${issue.fields.status.name}`)
+        msg.say(`JIRA Status of REL-109: ${issue.fields.status.name}`)
       })
       .catch(err => {
         console.error(err)
