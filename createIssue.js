@@ -1,3 +1,14 @@
+const JiraApi = require('jira-client')
+
+var jira = new JiraApi({
+  protocol: 'https',
+  host: process.env.JIRAHOST,
+  username: process.env.JIRAUSERNAME,
+  password: process.env.JIRAPASSWORD,
+  apiVersion: '2',
+  strictSSL: true
+})
+
 const MSG_QUIT_FEATURE_PROMPT = ', or type `quit` to stop creating the feature request'
 const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', "Create a Feature? Let's do it!"]
 const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
@@ -130,5 +141,12 @@ module.exports.config = function (slapp) {
     }
     state.descriptionText = text
     msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
+    jira.findIssue('REL-109')
+      .then(issue => {
+        console.log(`JIRA Status of REL-109: ${issue.fields.status.name}`)
+      })
+      .catch(err => {
+        console.error(err)
+      })
   })
 }
