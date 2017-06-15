@@ -254,16 +254,18 @@ slapp.route('handleSummary', (msg, state) => {
   }
 
   state.summaryText = text
-  msg.say('Now enter the Description text (hit Shift-Enter for multiple lines). Hit Enter when done' + MSG_QUIT_FEATURE_PROMPT)
+  msg.say('Now enter the Description text (hit Shift-Enter for multiple lines, Enter when done' + MSG_QUIT_FEATURE_PROMPT)
     .route('handleDescription', state, 60)
 })
 
 slapp.route('handleDescription', (msg, state) => {
   var text = (msg.body.event && msg.body.event.text) || ''
-  if (text === 'quit') {
-    msg.say(MSG_QUIT_FEATURE_RESPONSES)
-    return
+  if (!text) { // user may not have typed text as their next action, ask again and re-route
+    return msg.say("I'm eagerly awaiting to hear the Description").route('handleDescription', state)
+  } else if (text === 'quit') {
+    return msg.say(MSG_QUIT_FEATURE_RESPONSES)
   }
+
   state.descriptionText = text
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
 })
