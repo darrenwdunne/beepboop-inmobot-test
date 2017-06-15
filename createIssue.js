@@ -1,10 +1,19 @@
 const JiraApi = require('jira-client')
 
+if (process.env.JIRA_URL.startsWith('https://')) {
+  process.env.JIRAHOST = process.env.JIRA_URL.substring(8)
+  if (process.env.JIRAHOST.endsWith('\\')) {
+    process.env.JIRAHOST.slice(0, -1)
+  }
+}
+
+console.log('process.env.JIRAHOST=[' + process.env.JIRAHOST + ']')
+
 var jira = new JiraApi({
   protocol: 'https',
   host: process.env.JIRAHOST,
-  username: process.env.JIRAUSERNAME,
-  password: process.env.JIRAPASSWORD,
+  username: process.env.JIRA_U,
+  password: process.env.JIRA_P,
   apiVersion: '2',
   strictSSL: true
 })
