@@ -260,12 +260,10 @@ slapp.route('handleSummary', (msg, state) => {
 
 slapp.route('handleDescription', (msg, state) => {
   var text = (msg.body.event && msg.body.event.text) || ''
-  if (!text) { // user may not have typed text as their next action, ask again and re-route
-    return msg.say("I'm eagerly awaiting to hear the Description").route('handleDescription', state)
-  } else if (text === 'quit') {
-    return msg.say(MSG_QUIT_FEATURE_RESPONSES)
+  if (text === 'quit') {
+    msg.say(MSG_QUIT_FEATURE_RESPONSES)
+    return
   }
-
   state.descriptionText = text
   msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
 })
