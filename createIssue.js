@@ -149,8 +149,49 @@ module.exports.config = function (slapp) {
       return
     }
     state.descriptionText = text
-    msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
-    createIssueInJIRA(msg, state)
+    // msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
+    msg.say({
+      text: "Here's the feature I'm going to create:",
+      attachments: [
+        {
+          text: 'Summary: ' + state.summaryText + '\nCustomer: ' + state.customerName + 'Description: ' + state.descriptionText + '\n\nLooks Good?',
+          fallback: 'Looks Good?',
+          callback_id: 'doit_confirm_callback', // unused?
+          actions: [
+            { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
+            { name: 'answer', text: 'No', type: 'button', value: 'no' },
+            { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
+          ]
+        }]
+    })
+      // handle the response with this route passing state and expiring the conversation after 60 seconds
+      .route('handleCreateConfirmation', state, 60)
+  })
+
+  slapp.route('handleCreateConfirmation', (msg, state) => {
+    // if they respond with anything other than a button selection, get them back on track
+    if (msg.type !== 'action') {
+      msg
+        .say('Please choose a Yes, No, or Cancel button :wink:')
+        // notice we have to declare the next route to handle the response every time. Pass along the state and expire the conversation 60 seconds from now.
+        .route('handleCreateConfirmation', state, 60)
+      return
+    }
+
+    let answer = msg.body.actions[0].value
+
+    switch (answer) {
+      case 'cancel':
+        msg.respond(msg.body.response_url, { delete_original: true })
+          .say(MSG_QUIT_FEATURE_RESPONSES)
+        return
+      case 'yes':
+        createIssueInJIRA(msg, state)
+        break
+      case 'no':
+        msg.respond('Sorry, try again...', { delete_original: true })
+        return
+    }
   })
 }
 
