@@ -151,7 +151,7 @@ module.exports.config = function (slapp) {
     state.descriptionText = text
     // msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
     msg.say({
-      text: 'Here\'s the feature I\'m going to create:\n\nSummary: ' + state.summaryText + '\nCustomer: ' + state.customerName + '\nComponent: ' + state.component + '\nDescription: ' + state.descriptionText,
+      text: "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText + '\n*Customer:* ' + buildCustomerLabel(state.customerName) + '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText,
       attachments: [
         {
           text: 'Looks Good? If so, hit `Create`',
@@ -171,7 +171,7 @@ module.exports.config = function (slapp) {
     // if they respond with anything other than a button selection, get them back on track
     if (msg.type !== 'action') {
       msg
-        .say('Please choose a Yes, No, or Cancel button :wink:')
+        .say('Please choose a Create or Cancel button :wink:')
         // notice we have to declare the next route to handle the response every time. Pass along the state and expire the conversation 60 seconds from now.
         .route('handleCreateConfirmation', state, 60)
       return
@@ -184,14 +184,17 @@ module.exports.config = function (slapp) {
         msg.respond(msg.body.response_url, { delete_original: true })
           .say(MSG_QUIT_FEATURE_RESPONSES)
         return
-      case 'yes':
+      case 'create':
+        msg.respond(':zap:Creating:zap:', { delete_original: true })
         createIssueInJIRA(msg, state)
         break
-      case 'no':
-        msg.respond('Sorry, try again...', { delete_original: true })
-        return
     }
   })
+}
+
+function buildCustomerLabel (customer) {
+  var newStr = 'account-' + customer.replace(' ', '').replace('-', '').toLowerCase()
+  return newStr
 }
 
 function createIssueInJIRA (msg, state) {
