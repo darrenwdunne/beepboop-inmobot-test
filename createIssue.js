@@ -150,24 +150,24 @@ module.exports.config = function (slapp) {
     }
     state.descriptionText = text
     msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
-    createIssueInJIRA(state)
+    createIssueInJIRA(msg, state)
   })
 }
 
-function createIssueInJIRA (state) {
+function createIssueInJIRA (msg, state) {
   jira.addNewIssue({
     fields: {
       project: {key: 'DWD'}, // CLW
       issuetype: {name: 'Task'},
       summary: state.summaryText,
       description: state.descriptionText,
-      //      assignee: {name: 'ddunne'},
+      assignee: {name: 'ddunne'},
       labels: ['inMoBot']
     }
   })
     .then(issue => {
       var issueKey = issue.key
-      console.log('Issue created: ' + issueKey)
+      msg.say('Issue created: ' + issueKey)
     })
     .catch(error => {
       console.log(error.message)
