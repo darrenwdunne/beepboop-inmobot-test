@@ -26,32 +26,32 @@ module.exports.config = function (slapp) {
   // "Conversation" flow that tracks state - kicks off when user says feature
   slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
     var state = { requested: Date.now() }
-    var firstname = ''
+    var userFirstName = ''
     slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
       if (err) {
         console.log(err)
       }
-      firstname = result.user.profile.first_name
-    })
+      userFirstName = result.user.profile.first_name // real_name real_name_normalized email
 
-    msg.say('Hi ' + firstname + '!  ' + MSG_FEATURE_INTRO)
-      .say({
-        text: '',
-        attachments: [
-          {
-            text: 'Which component is this for? (if in doubt, just select inMotion)',
-            fallback: 'Which component is this for?',
-            callback_id: 'doit_confirm_callback', // unused?
-            actions: [
-              { name: 'answer', text: 'Proximus', type: 'button', value: 'Proximus' },
-              { name: 'answer', text: 'R + A', type: 'button', value: 'R + A' },
-              { name: 'answer', text: 'Mobile', type: 'button', value: 'Mobile' },
-              { name: 'answer', text: 'inMotion', type: 'button', value: 'inMotion' },
-              { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
-            ]
-          }]
-      })
-      .route('handleComponentSelection', state, 60)
+      msg.say('Hi ' + userFirstName + '!  ' + MSG_FEATURE_INTRO)
+        .say({
+          text: '',
+          attachments: [
+            {
+              text: 'Which component is this for? (if in doubt, just select inMotion)',
+              fallback: 'Which component is this for?',
+              callback_id: 'doit_confirm_callback', // unused?
+              actions: [
+                { name: 'answer', text: 'Proximus', type: 'button', value: 'Proximus' },
+                { name: 'answer', text: 'R + A', type: 'button', value: 'R + A' },
+                { name: 'answer', text: 'Mobile', type: 'button', value: 'Mobile' },
+                { name: 'answer', text: 'inMotion', type: 'button', value: 'inMotion' },
+                { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
+              ]
+            }]
+        })
+        .route('handleComponentSelection', state, 60)
+    })
   })
 
   slapp.route('handleComponentSelection', (msg, state) => {
