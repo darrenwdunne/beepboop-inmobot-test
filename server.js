@@ -1,3 +1,13 @@
+// Create a new feature in JIRA via a conversation with inMoBot
+// Author: Darren Dunne
+
+// TODO: show resulting URL as clickable link
+// TODO: ask for priority
+// TODO: dynamic lookup of Components and Owners (env var?)
+// TODO: set Assignee
+// TODO: deal value
+// TODO: set Originator (or Watcher, if Assignee not possible/practical)
+
 'use strict'
 
 const express = require('express')

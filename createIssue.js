@@ -26,14 +26,14 @@ module.exports.config = function (slapp) {
   // "Conversation" flow that tracks state - kicks off when user says feature
   slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
     var state = { requested: Date.now() }
-    var userFirstName = ''
     slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
       if (err) {
         console.log(err)
       }
-      userFirstName = result.user.profile.first_name // real_name real_name_normalized email
+      state.userProfile = result.user.profile // incl. first_name real_name real_name_normalized email
 
-      msg.say('Hi ' + userFirstName + '!  ' + MSG_FEATURE_INTRO)
+      msg.say('Hi ' + state.userProfile.first_name + '!\n')
+        .say(MSG_FEATURE_INTRO)
         .say({
           text: '',
           attachments: [
@@ -161,8 +161,8 @@ module.exports.config = function (slapp) {
       text: "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText + '\n*Customer:* ' + buildCustomerLabel(state.customerName) + '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText,
       attachments: [
         {
-          text: 'Looks Good? If so, hit `Create`',
-          fallback: 'Looks Good? If so, hit `Create`',
+          text: 'Looks Good? If so, click Create',
+          fallback: 'Looks Good? If so, click Create',
           callback_id: 'doit_confirm_callback', // unused?
           actions: [
             { name: 'answer', text: 'Create', type: 'button', value: 'create' },
@@ -210,7 +210,7 @@ function createIssueInJIRA (msg, state) {
       project: {key: 'DWD'}, // CLW
       issuetype: {name: 'Task'},
       summary: state.summaryText,
-      description: state.descriptionText,
+      description: state.descriptionText + '\n\n----\n\n??Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
       assignee: {name: 'ddunne'},
       labels: [buildCustomerLabel(state.customerName), 'inMoBot']
     }
