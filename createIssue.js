@@ -157,17 +157,20 @@ module.exports.config = function (slapp) {
 function createIssueInJIRA (state) {
   jira.addNewIssue({
     fields: {
-      project: {key: 'CLW'},
+      project: {key: 'DWD'}, // CLW
       issuetype: {name: 'Task'},
       summary: state.summaryText,
       description: state.descriptionText,
-      assignee: {name: 'ddunne'},
+      //      assignee: {name: 'ddunne'},
       labels: ['inMoBot']
     }
   })
     .then(issue => {
       var issueKey = issue.key
       console.log('Issue created: ' + issueKey)
+    })
+    .catch(error => {
+      console.log(error.message)
     })
 }
 
