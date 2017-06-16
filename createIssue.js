@@ -151,15 +151,14 @@ module.exports.config = function (slapp) {
     state.descriptionText = text
     // msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
     msg.say({
-      text: "Here's the feature I'm going to create:",
+      text: 'Here\'s the feature I\'m going to create:\n\nSummary: ' + state.summaryText + '\nCustomer: ' + state.customerName + '\nComponent: ' + state.component + '\nDescription: ' + state.descriptionText,
       attachments: [
         {
-          text: 'Summary: ' + state.summaryText + '\nCustomer: ' + state.customerName + 'Description: ' + state.descriptionText + '\n\nLooks Good?',
-          fallback: 'Looks Good?',
+          text: 'Looks Good? If so, hit `Create`',
+          fallback: 'Looks Good? If so, hit `Create`',
           callback_id: 'doit_confirm_callback', // unused?
           actions: [
-            { name: 'answer', text: 'Yes', type: 'button', value: 'yes' },
-            { name: 'answer', text: 'No', type: 'button', value: 'no' },
+            { name: 'answer', text: 'Create', type: 'button', value: 'create' },
             { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
           ]
         }]
