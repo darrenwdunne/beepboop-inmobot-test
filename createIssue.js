@@ -26,8 +26,15 @@ module.exports.config = function (slapp) {
   // "Conversation" flow that tracks state - kicks off when user says feature
   slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
     var state = { requested: Date.now() }
+    var firstname = ''
+    slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
+      if (err) {
+        console.log(err)
+      }
+      firstname = result.user.profile.first_name
+    })
 
-    msg.say(MSG_FEATURE_INTRO)
+    msg.say('Hi ' + firstname + '!  ' + MSG_FEATURE_INTRO)
       .say({
         text: '',
         attachments: [
