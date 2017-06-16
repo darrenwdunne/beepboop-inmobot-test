@@ -193,7 +193,7 @@ module.exports.config = function (slapp) {
 }
 
 function buildCustomerLabel (customer) {
-  var newStr = 'account-' + customer.replace(' ', '').replace('-', '').toLowerCase()
+  var newStr = 'account-' + customer.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
   return newStr
 }
 
@@ -205,7 +205,7 @@ function createIssueInJIRA (msg, state) {
       summary: state.summaryText,
       description: state.descriptionText,
       assignee: {name: 'ddunne'},
-      labels: ['inMoBot']
+      labels: [buildCustomerLabel(state.customerName), 'inMoBot']
     }
   })
     .then(issue => {
