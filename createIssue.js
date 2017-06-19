@@ -185,7 +185,7 @@ var config = function (slapp) {
             .say(MSG_QUIT_FEATURE_RESPONSES)
           return
         case 'create':
-          msg.say(':zap:Creating:zap:', { delete_original: true })
+          msg.say(':zap:Creating:zap:')
           createIssueInJIRA(msg, state)
           break
       }
