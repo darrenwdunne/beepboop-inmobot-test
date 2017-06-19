@@ -190,7 +190,8 @@ var config = function (slapp) {
             .say(MSG_QUIT_FEATURE_RESPONSES)
           return
         case 'create':
-          msg.say(msg.body.response_url, { text: ':zap:Creating:zap:', delete_original: true }) // remove the buttons, so user cannot click again
+          // msg.say(msg.body.response_url, { text: ':zap:Creating:zap:', delete_original: true }) // remove the buttons, so user cannot click again
+          msg.say(':zap:Creating:zap:') // remove the buttons, so user cannot click again
           createIssueInJIRA(msg, state)
           break
       }
