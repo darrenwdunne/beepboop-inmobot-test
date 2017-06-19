@@ -221,12 +221,13 @@ function createIssueInJIRA (msg, state) {
       project: {key: 'DWD'}, // CLW
       issuetype: {name: 'Task'},
       summary: state.summaryText,
-      description: state.descriptionText + '\n\n----\n\n??(*g)Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
+      description: state.descriptionText + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
       assignee: {name: 'ddunne'},
       labels: getLabelArray(state)
     }
   })
     .then(issue => {
+      msg.say('Here is your JIRA feature:')
       fetchIssue.outputMessage(msg, issue.key, '', '')
     })
     .catch(error => {
