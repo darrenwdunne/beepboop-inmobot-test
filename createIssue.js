@@ -127,6 +127,7 @@ var config = function (slapp) {
       } else if (text === 'quit') {
         return msg.say(MSG_QUIT_FEATURE_RESPONSES)
       }
+      state.customer = text
       msg.say("Got it, we're creating a feature for " + text + '.\nPlease give me a one-line Feature Summary' + MSG_QUIT_FEATURE_PROMPT)
         .route('handleSummary', state)
     })
