@@ -1,6 +1,6 @@
 const request = require('request')
 
-module.exports.getIssue = function (jiraurl, jirau, jirap, issue) {
+var getIssue = function (jiraurl, jirau, jirap, issue) {
   return new Promise((resolve, reject) => {
     if (issue === undefined) {
       reject(new Error('ERROR: need to provide issue'))
@@ -37,7 +37,7 @@ module.exports.getIssue = function (jiraurl, jirau, jirap, issue) {
 // need to parse out:
 //  - repo slug (e.g. web-vnow)
 //  - the PR number (in this case, 290) so we can surf through the activity log to see who already approved
-module.exports.getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
+var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
   return new Promise((resolve, reject) => {
     if (bitBucketDiffURL === undefined) {
       reject(new Error('Need to provide a bitbucket diff url'))
@@ -91,3 +91,6 @@ module.exports.getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffU
     }
   })
 }
+
+exports.getIssue = getIssue
+exports.getPRStatusString = getPRStatusString

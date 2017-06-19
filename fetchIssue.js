@@ -2,7 +2,7 @@ const jira = require('./jira')
 
 global.previousIssue = ''
 
-module.exports.config = function (slapp) {
+var config = function (slapp) {
   // Respond to a JIRA issue (e.g. PX-1234)
   slapp.message(/(cs-|ra16-|mds-|px-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 'ambient'], (msg) => {
     var text = (msg.body.event && msg.body.event.text) || ''
@@ -40,110 +40,112 @@ module.exports.config = function (slapp) {
     const issueKey = Math.floor(Math.random() * bugs.length)
     module.exports.outputMessage(msg, bugs[issueKey], "Here's a random Low priority bug from the Spark backlog")
   })
+}
+var outputMessage = function (msg, issueKey, introText, footerText) {
+  if (global.previousIssue !== issueKey) {
+    // don't want to be "chatty" - if a user keeps mentioning a single issue, only report back on it once
+    global.previousIssue = issueKey
+    // these env vars are configured during bot installation and passed in during initialization
+    jira.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
+      var avatarUrl = null
+      if (jiraIssue.fields.assignee != null) {
+        avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
+      }
 
-  module.exports.outputMessage = function (msg, issueKey, introText, footerText) {
-    if (global.previousIssue !== issueKey) {
-      // don't want to be "chatty" - if a user keeps mentioning a single issue, only report back on it once
-      global.previousIssue = issueKey
-      // these env vars are configured during bot installation and passed in during initialization
-      jira.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
-        var avatarUrl = null
-        if (jiraIssue.fields.assignee != null) {
-          avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
-        }
-
-        msg.say({
-          text: introText,
-          attachments: [{
-            fallback: '',
-            text: '',
-            title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
-            // thumb_url: avatarUrl,
-            author_name: getAttributesText(jiraIssue),
-            author_icon: avatarUrl,
-            footer: footerText,
-            title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
-            // mrkdwn_in: ['fields'],
-            // 'fields': [
-            //   {
-            //     'title': 'Status',
-            //     'value': '`' + jiraIssue.fields.status.name + '`',
-            //     'short': true
-            //   },
-            //   // {
-            //   //   'title': 'Assignee',
-            //   //   'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
-            //   //   'short': true
-            //   // },
-            //   {
-            //     'title': 'Priority',
-            //     'value': '`' + jiraIssue.fields.priority.name + '`',
-            //     'short': true
-            //   }
-            // ],
-            color: getColor(jiraIssue.fields.issuetype.name, jiraIssue.fields.priority.name)
-          }]
-        })
-      }).catch((err) => {
-        console.log(err)
-        msg.say({
-          text: "Sorry, couldn't find " + issueKey + ' :cry:'
-        })
+      msg.say({
+        text: introText,
+        attachments: [{
+          fallback: '',
+          text: '',
+          title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
+          // thumb_url: avatarUrl,
+          author_name: getAttributesText(jiraIssue),
+          author_icon: avatarUrl,
+          footer: footerText,
+          title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
+          // mrkdwn_in: ['fields'],
+          // 'fields': [
+          //   {
+          //     'title': 'Status',
+          //     'value': '`' + jiraIssue.fields.status.name + '`',
+          //     'short': true
+          //   },
+          //   // {
+          //   //   'title': 'Assignee',
+          //   //   'value': jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName,
+          //   //   'short': true
+          //   // },
+          //   {
+          //     'title': 'Priority',
+          //     'value': '`' + jiraIssue.fields.priority.name + '`',
+          //     'short': true
+          //   }
+          // ],
+          color: getColor(jiraIssue.fields.issuetype.name, jiraIssue.fields.priority.name)
+        }]
       })
-    }
-  }
-
-  function getAttributesText (jiraIssue) {
-    var text = jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName
-    text += ' | ' + jiraIssue.fields.status.name + ' | ' + jiraIssue.fields.priority.name
-    switch (jiraIssue.fields.priority.name) {
-      case 'Critical':
-        text += ' :jira-critical:'
-        break
-      case 'High':
-        text += ' :jira-high:'
-        break
-      case 'Medium':
-        text += ' :jira-medium:'
-        break
-      case 'Low':
-        text += ' :jira-low:'
-        break
-      case 'Open':
-        text += ' :jira-open:'
-        break
-    }
-    return text
-  }
-
-  function getColor (issuetype, priority) {
-    var color = 'good'
-    switch (issuetype) {
-      case 'Bug':
-      case 'Bug-task':
-        switch (priority) {
-          case 'Open':
-            color = 'good'
-            break
-          case 'High':
-            color = 'danger'
-            break
-          case 'Medium':
-            color = 'warning'
-            break
-        }
-        break
-      case 'Story':
-        color = '#63BA3C'
-        break
-      case 'Task':
-      case 'Sub-task':
-        color = '#4BADE8'
-        break
-      case 'Epic':
-        color = '#904EE2'
-        break
-    }
-    return color
+    }).catch((err) => {
+      console.log(err)
+      msg.say({
+        text: "Sorry, couldn't find " + issueKey + ' :cry:'
+      })
+    })
   }
 }
+
+function getAttributesText (jiraIssue) {
+  var text = jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName
+  text += ' | ' + jiraIssue.fields.status.name + ' | ' + jiraIssue.fields.priority.name
+  switch (jiraIssue.fields.priority.name) {
+    case 'Critical':
+      text += ' :jira-critical:'
+      break
+    case 'High':
+      text += ' :jira-high:'
+      break
+    case 'Medium':
+      text += ' :jira-medium:'
+      break
+    case 'Low':
+      text += ' :jira-low:'
+      break
+    case 'Open':
+      text += ' :jira-open:'
+      break
+  }
+  return text
+}
+
+function getColor (issuetype, priority) {
+  var color = 'good'
+  switch (issuetype) {
+    case 'Bug':
+    case 'Bug-task':
+      switch (priority) {
+        case 'Open':
+          color = 'good'
+          break
+        case 'High':
+          color = 'danger'
+          break
+        case 'Medium':
+          color = 'warning'
+          break
+      }
+      break
+    case 'Story':
+      color = '#63BA3C'
+      break
+    case 'Task':
+    case 'Sub-task':
+      color = '#4BADE8'
+      break
+    case 'Epic':
+      color = '#904EE2'
+      break
+  }
+  return color
+}
+
+exports.config = config
+exports.outputMessage = outputMessage

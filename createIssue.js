@@ -1,5 +1,5 @@
 const JiraApi = require('jira-client')
-// const fetchIssue = require('./fetchIssue')
+const fetchIssue = require('./fetchIssue')
 
 if (process.env.JIRA_URL.startsWith('https://')) {
   process.env.JIRAHOST = process.env.JIRA_URL.substring(8)
@@ -23,7 +23,7 @@ const MSG_QUIT_FEATURE_PROMPT = ', or type `quit` to stop creating the feature r
 const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', "Create a Feature? Let's do it!"]
 const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
 
-module.exports.config = function (slapp) {
+var config = function (slapp) {
   // "Conversation" flow that tracks state - kicks off when user says feature
   slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
     var state = { requested: Date.now() }
@@ -150,15 +150,6 @@ module.exports.config = function (slapp) {
       .route('handleDescription', state, 60)
   })
 
-  function getFeatureCreationSummaryText (state) {
-    var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText
-    if (state.customer !== undefined && state.customer !== '') {
-      text += '\n*Customer:* ' + getFeatureCreationSummaryText(state.customerName)
-    }
-    text += '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText
-    return text
-  }
-
   slapp.route('handleDescription', (msg, state) => {
     var text = (msg.body.event && msg.body.event.text) || ''
     if (text === 'quit') {
@@ -209,6 +200,15 @@ module.exports.config = function (slapp) {
   })
 }
 
+function getFeatureCreationSummaryText (state) {
+  var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText
+  if (state.customer !== undefined && state.customer !== '') {
+    text += '\n*Customer:* ' + getFeatureCreationSummaryText(state.customerName)
+  }
+  text += '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText
+  return text
+}
+
 function buildCustomerLabel (customer) {
   var newStr = 'account-' + customer.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
   return newStr
@@ -229,18 +229,20 @@ function createIssueInJIRA (msg, state) {
       project: {key: 'DWD'}, // CLW
       issuetype: {name: 'Task'},
       summary: state.summaryText,
-      description: state.descriptionText + '\n\n----\n\n??Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
+      description: state.descriptionText + '\n\n----\n\n??(*g)Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
       assignee: {name: 'ddunne'},
       labels: getLabelArray(state)
     }
   })
     .then(issue => {
-      // fetchIssue.outputMessage(msg, issue.Key)
+      fetchIssue.outputMessage(msg, issue.key, '', '')
     })
     .catch(error => {
       console.log(error.message)
     })
 }
+
+exports.config = config
 
 // jira.findIssue('REL-109')
 //   .then(issue => {
