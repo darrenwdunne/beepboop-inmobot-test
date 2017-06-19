@@ -108,7 +108,7 @@ var config = function (slapp) {
 
       switch (answer) {
         case 'cancel':
-            msg.say(MSG_QUIT_FEATURE_RESPONSES)
+          msg.say(MSG_QUIT_FEATURE_RESPONSES)
           return
         case 'yes':
           msg.say("Who's the customer?")
@@ -127,7 +127,7 @@ var config = function (slapp) {
       } else if (text === 'quit') {
         return msg.say(MSG_QUIT_FEATURE_RESPONSES)
       }
-      state.customer = text
+      state.customerName = text
       msg.say("Got it, we're creating a feature for " + text + '.\nPlease give me a one-line Feature Summary' + MSG_QUIT_FEATURE_PROMPT)
         .route('handleSummary', state)
     })
@@ -195,21 +195,21 @@ var config = function (slapp) {
 
 function getFeatureCreationSummaryText (state) {
   var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText
-  if (state.customer !== undefined && state.customer !== '') {
+  if (state.customerName !== undefined && state.customerName !== '') {
     text += '\n*Customer:* ' + getFeatureCreationSummaryText(state.customerName)
   }
   text += '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText
   return text
 }
 
-function buildCustomerLabel (customer) {
-  var newStr = 'account-' + customer.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
+function buildCustomerLabel (customerName) {
+  var newStr = 'account-' + customerName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
   return newStr
 }
 
 function getLabelArray (state) {
   var labelArray = []
-  if (state.customer !== undefined) {
+  if (state.customerName !== undefined) {
     labelArray.push(buildCustomerLabel(state.customerName))
   }
   labelArray.push('inMoBot')
