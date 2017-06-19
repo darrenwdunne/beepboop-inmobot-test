@@ -1,4 +1,5 @@
 const JiraApi = require('jira-client')
+// const fetchIssue = require('./fetchIssue')
 
 if (process.env.JIRA_URL.startsWith('https://')) {
   process.env.JIRAHOST = process.env.JIRA_URL.substring(8)
@@ -149,6 +150,15 @@ module.exports.config = function (slapp) {
       .route('handleDescription', state, 60)
   })
 
+  function getFeatureCreationSummaryText (state) {
+    var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText
+    if (state.customer !== undefined && state.customer !== '') {
+      text += '\n*Customer:* ' + getFeatureCreationSummaryText(state.customerName)
+    }
+    text += '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText
+    return text
+  }
+
   slapp.route('handleDescription', (msg, state) => {
     var text = (msg.body.event && msg.body.event.text) || ''
     if (text === 'quit') {
@@ -158,7 +168,7 @@ module.exports.config = function (slapp) {
     state.descriptionText = text
     // msg.say(`Here's what you've told me so far: \`\`\`${JSON.stringify(state)}\`\`\``)
     msg.say({
-      text: "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText + '\n*Customer:* ' + buildCustomerLabel(state.customerName) + '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText,
+      text: getFeatureCreationSummaryText(state),
       attachments: [
         {
           text: 'Looks Good? If so, click Create',
@@ -204,6 +214,15 @@ function buildCustomerLabel (customer) {
   return newStr
 }
 
+function getLabelArray (state) {
+  var labelArray = []
+  if (state.customer !== undefined) {
+    labelArray.push(buildCustomerLabel(state.customerName))
+  }
+  labelArray.push('inMoBot')
+  return labelArray
+}
+
 function createIssueInJIRA (msg, state) {
   jira.addNewIssue({
     fields: {
@@ -212,12 +231,11 @@ function createIssueInJIRA (msg, state) {
       summary: state.summaryText,
       description: state.descriptionText + '\n\n----\n\n??Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
       assignee: {name: 'ddunne'},
-      labels: [buildCustomerLabel(state.customerName), 'inMoBot']
+      labels: getLabelArray(state)
     }
   })
     .then(issue => {
-      var issueKey = issue.key
-      msg.say('Issue created: ' + issueKey)
+      // fetchIssue.outputMessage(msg, issue.Key)
     })
     .catch(error => {
       console.log(error.message)
