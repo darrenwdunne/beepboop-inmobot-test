@@ -6,6 +6,11 @@
 // TODO: set Assignee
 // TODO: deal value
 // TODO: set Originator (or Watcher, if Assignee not possible/practical)
+// TODO: final cancel doesn't work
+// TODO: it's creating a Task in the DWD project - what about CLW?
+// TODO: change assignee to a PO
+// TODO: replace the Create/Cancel buttons (actually all buttons, once they've answered the questions)
+// TODO: replace with a Slash command
 
 'use strict'
 

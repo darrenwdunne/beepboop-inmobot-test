@@ -1,7 +1,3 @@
-// TODO: final cancel doesn't work
-// TODO: it's creating a Task in the DWD project - what about CLW?
-// TODO: change assignee to a PO
-// TODO: replace the Create/Cancel buttons (actually all buttons, once they've answered the questions)
 
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
@@ -30,7 +26,7 @@ const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, bu
 
 var config = function (slapp) {
   // "Conversation" flow that tracks state - kicks off when user says feature
-  slapp.message('feature', ['direct_mention', 'direct_message'], (msg) => {
+  slapp.command('/feature', (msg) => {
     var state = { requested: Date.now() }
     slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
       if (err) {
