@@ -1,4 +1,8 @@
-// TODO:
+// TODO: final cancel doesn't work
+// TODO: it's creating a Task in the DWD project - what about CLW?
+// TODO: change assignee to a PO
+// TODO: replace the Create/Cancel buttons (actually all buttons, once they've answered the questions)
+
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
 
@@ -186,7 +190,7 @@ var config = function (slapp) {
             .say(MSG_QUIT_FEATURE_RESPONSES)
           return
         case 'create':
-          msg.say(':zap:Creating:zap:')
+          msg.say(msg.body.response_url, { text: ':zap:Creating:zap:', delete_original: true }) // remove the buttons, so user cannot click again
           createIssueInJIRA(msg, state)
           break
       }
@@ -196,7 +200,7 @@ var config = function (slapp) {
 function getFeatureCreationSummaryText (state) {
   var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summaryText
   if (state.customerName !== undefined && state.customerName !== '') {
-    text += '\n*Customer:* ' + getFeatureCreationSummaryText(state.customerName)
+    text += '\n*Customer:* ' + state.customerName
   }
   text += '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText
   return text
