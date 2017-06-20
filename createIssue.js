@@ -21,8 +21,8 @@ var jira = new JiraApi({
 })
 
 const MSG_QUIT_FEATURE_PROMPT = ', or type `quit` to stop creating the feature request'
-const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', "Create a Feature? Let's do it!"]
-const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but it is *_Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
+const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', 'Create a Feature? Let\'s do it!', 'Let\'s create a Feature!']
+const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
 
 var config = function (slapp) {
   // "Conversation" flow that tracks state - kicks off when user says feature
@@ -64,7 +64,7 @@ var config = function (slapp) {
           .route('handleComponentSelection', state, 60)
         return
       }
-      // msg.say(msg.body.response_url, { delete_original: true })
+      msg.respond(msg.body.response_url, { delete_original: true }) // remove the buttons
 
       let answer = msg.body.actions[0].value
 
@@ -74,6 +74,47 @@ var config = function (slapp) {
           return
         default:
           state.component = answer
+          break
+      }
+
+      msg.say({
+        text: '',
+        attachments: [
+          {
+            text: 'What is the Priority of this Feature?',
+            fallback: 'What is the Priority of this Feature?',
+            callback_id: 'doit_confirm_callback', // unused?
+            actions: [
+              { name: 'answer', text: 'Customer may churn!', type: 'button', value: 'Critical' },
+              { name: 'answer', text: 'High', type: 'button', value: 'High' },
+              { name: 'answer', text: 'Medium', type: 'button', value: 'Medium' },
+              { name: 'answer', text: 'Low', type: 'button', value: 'Low' },
+              { name: 'answer', text: 'Cancel', type: 'button', value: 'cancel' }
+            ]
+          }]
+      })
+        // handle the response with this route passing state and expiring the conversation after 60 seconds
+        .route('handlePriorityConfirmation', state, 60)
+    })
+    .route('handlePriorityConfirmation', (msg, state) => {
+      // if they respond with anything other than a button selection, get them back on track
+      if (msg.type !== 'action') {
+        msg
+          .say('Please choose a Priority button :wink:')
+          // notice we have to declare the next route to handle the response every time. Pass along the state and expire the conversation 60 seconds from now.
+          .route('handlePriorityConfirmation', state, 60)
+        return
+      }
+      msg.respond(msg.body.response_url, { delete_original: true }) // remove the buttons
+
+      let answer = msg.body.actions[0].value
+
+      switch (answer) {
+        case 'cancel':
+          msg.say(MSG_QUIT_FEATURE_RESPONSES)
+          return
+        default:
+          state.priority = answer
           break
       }
 
@@ -103,6 +144,7 @@ var config = function (slapp) {
           .route('handleCustomerConfirmation', state, 60)
         return
       }
+      msg.respond(msg.body.response_url, { delete_original: true }) // remove the buttons
 
       let answer = msg.body.actions[0].value
 
@@ -177,6 +219,7 @@ var config = function (slapp) {
           .route('handleCreateConfirmation', state, 60)
         return
       }
+      msg.respond(msg.body.response_url, { delete_original: true }) // remove the buttons
 
       let answer = msg.body.actions[0].value
 
@@ -199,7 +242,7 @@ function getFeatureCreationSummaryText (state) {
   if (state.customerName !== undefined && state.customerName !== '') {
     text += '\n*Customer:* ' + state.customerName
   }
-  text += '\n*Component:* ' + state.component + '\n*Description:*\n' + state.descriptionText
+  text += '\n*Component:* ' + state.componenttext + '\n*Priority:* ' + state.priority + '\n*Description:*\n' + state.descriptionText
   return text
 }
 
@@ -220,16 +263,18 @@ function getLabelArray (state) {
 function createIssueInJIRA (msg, state) {
   jira.addNewIssue({
     fields: {
-      project: {key: 'DWD'}, // CLW
+      project: {key: 'DWD'}, // TODO: change to CLW
       issuetype: {name: 'Task'},
       summary: state.summaryText,
       description: state.descriptionText + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
-      assignee: {name: 'ddunne'},
+      assignee: {name: 'ddunne'}, // TODO: dynamic
+      priority: {name: state.priority},
       labels: getLabelArray(state)
     }
   })
     .then(issue => {
-      msg.say('Here is your JIRA feature:')
+      msg.respond(msg.body.response_url, {text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
+      // msg.say('Here is your JIRA feature:')
       fetchIssue.outputMessage(msg, issue.key, '', '')
     })
     .catch(error => {
