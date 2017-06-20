@@ -225,8 +225,7 @@ var config = function (slapp) {
 
       switch (answer) {
         case 'cancel':
-          msg.say(msg.body.response_url, { delete_original: true })
-            .say(MSG_QUIT_FEATURE_RESPONSES)
+          msg.say(MSG_QUIT_FEATURE_RESPONSES)
           return
         case 'create':
           // msg.say(msg.body.response_url, { text: ':zap:Creating:zap:', delete_original: true }) // remove the buttons, so user cannot click again
