@@ -115,7 +115,7 @@ function getAttributesText (jiraIssue) {
       text += ' :jira-open:'
       break
   }
-  if (jiraIssue.fields.duedate !== null) {
+  if (jiraIssue.fields.duedate !== undefined) {
     var due = moment(jiraIssue.fields.duedate)
     text += ' | Due: ' + due.format('MMM DD')
   }

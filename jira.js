@@ -5,7 +5,7 @@ var getIssue = function (jiraurl, jirau, jirap, issue) {
     if (issue === undefined) {
       reject(new Error('ERROR: need to provide issue'))
     } else {
-      const URL = jiraurl + '/rest/api/2/search?jql=key=' + issue + '&startAt=0&maxResults=15&fields=summary,issuetype,assignee,status,priority,key,changelog&expand=changelog'
+      const URL = jiraurl + '/rest/api/2/search?jql=key=' + issue + '&startAt=0&maxResults=15&fields=summary,issuetype,assignee,status,priority,key,duedate,changelog&expand=changelog'
       console.log('fetching issue ' + issue)
       request(
         {
