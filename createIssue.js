@@ -1,4 +1,3 @@
-
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
 const components = require('./components')
@@ -22,7 +21,7 @@ var jira = new JiraApi({
 })
 
 const MSG_QUIT_FEATURE_PROMPT = ', or type `quit` to stop creating the feature request'
-const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', 'Create a Feature? Let\'s do it!', 'Let\'s create a Feature!']
+const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', "Create a Feature? Let's do it!", "Let's create a Feature!"]
 const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
 
 var config = function (slapp) {
@@ -68,6 +67,8 @@ var config = function (slapp) {
           msg.say(MSG_QUIT_FEATURE_RESPONSES)
           return
         default:
+          const owner = components.getComponentOwner(answer)
+          msg.say(owner + ' is going to be excited to hear about your new ' + answer + ' feature!')
           state.component = answer
           break
       }
@@ -250,7 +251,8 @@ function getLabelArray (state) {
   if (state.customerName !== undefined) {
     labelArray.push(buildCustomerLabel(state.customerName))
   }
-  labelArray.push('inMoBot')
+  labelArray.push(components.getComponentLabel(state.component))
+  labelArray.push('inmobot')
   return labelArray
 }
 
@@ -267,7 +269,7 @@ function createIssueInJIRA (msg, state) {
     }
   })
     .then(issue => {
-      msg.respond(msg.body.response_url, {text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
+      msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
       // msg.say('Here is your JIRA feature:')
       fetchIssue.outputMessage(msg, issue.key, '', '')
     })

@@ -13,7 +13,25 @@ function getComponentOwner (compName) {
   var comps = getComponents()
   for (var i = 0; i < comps.length; i++) {
     if (comps[i].name === compName) {
-      return comps[i].id
+      return comps[i].owner
+    }
+  }
+}
+
+function getComponentOwnerId (compName) {
+  var comps = getComponents()
+  for (var i = 0; i < comps.length; i++) {
+    if (comps[i].name === compName) {
+      return comps[i].ownerid
+    }
+  }
+}
+
+function getComponentLabel (compName) {
+  var comps = getComponents()
+  for (var i = 0; i < comps.length; i++) {
+    if (comps[i].name === compName) {
+      return comps[i].label
     }
   }
 }
@@ -43,3 +61,5 @@ function getComponentButtons () {
 
 exports.getComponentButtons = getComponentButtons
 exports.getComponentOwner = getComponentOwner
+exports.getComponentOwnerId = getComponentOwnerId
+exports.getComponentLabel = getComponentLabel
