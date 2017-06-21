@@ -1,7 +1,6 @@
 // Create a new feature in JIRA via a conversation with inMoBot
 // Author: Darren Dunne
 
-// TODO: dynamic lookup of Components and Owners (env var?)
 // TODO: set Assignee
 // TODO: deal value
 // TODO: set Originator (or Watcher, if Assignee not possible/practical)
