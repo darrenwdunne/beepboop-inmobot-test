@@ -1,3 +1,5 @@
+const moment = require('moment')
+
 const jira = require('./jira')
 
 global.previousIssue = ''
@@ -112,6 +114,10 @@ function getAttributesText (jiraIssue) {
     case 'Open':
       text += ' :jira-open:'
       break
+  }
+  if (jiraIssue.fields.duedate !== null) {
+    var due = moment(jiraIssue.fields.duedate)
+    text += ' | Due: ' + due.format('MMM DD')
   }
   return text
 }
