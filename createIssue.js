@@ -263,7 +263,7 @@ function createIssueInJIRA (msg, state) {
       issuetype: {name: 'Task'},
       summary: state.summaryText,
       description: state.descriptionText + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
-      assignee: {name: 'ddunne'}, // TODO: dynamic
+      assignee: {name: components.getComponentOwnerId(state.component)},
       priority: {name: state.priority},
       labels: getLabelArray(state)
     }
