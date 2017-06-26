@@ -45,9 +45,9 @@ function getComponentNames () {
   return names
 }
 
-console.log(getComponentOwner('Proximus'))
-console.log(getComponentOwner('R + A'))
-console.log(getComponentNames())
+// console.log(getComponentOwner('Proximus'))
+// console.log(getComponentOwner('R + A'))
+// console.log(getComponentNames())
 
 function getComponentButtons () {
   var compNames = getComponentNames()
