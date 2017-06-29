@@ -1,8 +1,4 @@
 'use strict'
-const moment = require('moment-timezone')
-const config = {
-  timezone: 'America/Los_Angeles'
-}
 
 const JiraApi = require('jira-client')
 // const fetchIssue = require('./fetchIssue')
@@ -15,46 +11,40 @@ if (process.env.JIRA_URL.startsWith('https://')) {
   }
 }
 
-// console.log('process.env.JIRAHOST=[' + process.env.JIRAHOST + ']')
+// var jira = new JiraApi({
+//   protocol: 'https',
+//   host: process.env.JIRAHOST,
+//   username: process.env.JIRA_U,
+//   password: process.env.JIRA_P,
+//   apiVersion: '2',
+//   strictSSL: true
+// })
 
-var jira = new JiraApi({
-  protocol: 'https',
-  host: process.env.JIRAHOST,
-  username: process.env.JIRA_U,
-  password: process.env.JIRA_P,
-  apiVersion: '2',
-  strictSSL: true
-})
-
-const FEATURE_INIT = 'feature:init'
-const FEATURE_CUSTOMER = 'feature:customer'
-const FEATURE_COMPONENT = 'feature:component'
-const FEATURE_PRIORITY = 'feature:priority'
-const FEATURE_CONFIRM = 'feature:confirm'
+const HANDLE_FEATURE_INIT = 'feature:init'
+const HANDLE_FEATURE_CUSTOMER_YN = 'feature:customeryn'
+const HANDLE_FEATURE_CUSTOMER_NAME = 'feature:customername'
+const HANDLE_FEATURE_COMPONENT = 'feature:component'
+const HANDLE_FEATURE_PRIORITY = 'feature:priority'
+const HANDLE_FEATURE_CONFIRM = 'feature:confirm'
 // const TIMEOFF_DATE_FINISHED = 'timeoff:finished'
 // const TIMEOFF_DATE_AUTHORIZE = 'timeoff:authorize'
 
 const featureInit = (msg) => {
-  const message = {
+  msg.say({
     text: ``,
-    attachments: [
-      {
-        text: `Hi! I see you want to create an Feature. Is this correct?`,
-        fallback: 'Are you sure?',
-        callback_id: FEATURE_INIT,
-        actions: [
-          {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
-          {name: 'answer', text: 'No', type: 'button', value: 'no'}
-        ]
-      }
-    ],
+    attachments: [{
+      text: `Hi! I see you want to create a Feature. Is this correct?`,
+      fallback: 'Are you sure?',
+      callback_id: HANDLE_FEATURE_INIT,
+      actions: [
+        {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
+        {name: 'answer', text: 'No', type: 'button', value: 'no'}
+      ]
+    }],
     channel: msg.body.user_id,
     as_user: true
-  }
-
-  msg
-    .say(message)
-    .route(FEATURE_INIT)
+  })
+    .route(HANDLE_FEATURE_INIT)
 }
 
 module.exports = (slapp) => {
@@ -70,12 +60,10 @@ module.exports = (slapp) => {
 
   slapp.command('/feature', /.*/, featureInit)
 
-  slapp.action(FEATURE_INIT, (msg) => {
+  slapp.action(HANDLE_FEATURE_INIT, (msg) => {
     const state = {
       init: Date.now(),
-      start: null,
-      end: null,
-      reason: '',
+      customer: null,
       user: msg.body.user
     }
 
@@ -93,78 +81,103 @@ module.exports = (slapp) => {
       delete_original: true
     })
 
-    const message = {
-      text: 'Which component?',
-      callback_id: FEATURE_CUSTOMER,
-      delete_original: true,
-      attachments: [
-        {
-          text: '',
-          fallback: '',
-          callback_id: FEATURE_INIT,
-          actions: components.getComponentButtons()
-        }
-      ]
-    }
-
-    msg
-      .say(message)
-      .route(FEATURE_CUSTOMER, state, 20)
-  })
-
-  slapp.route(FEATURE_CUSTOMER, (msg, state) => {
-    const answer = msg.body.actions[0].value
-    const owner = components.getComponentOwner(answer)
-    msg.respond({
-      text: `${owner} is going to be thrilled to hear about your new ${answer} feature!`, 
-      delete_original: true
+    msg.say({
+      text: ``,
+      attachments: [{
+        text: `Is this for a Customer?`,
+        fallback: `Is this for a Customer?`,
+        callback_id: HANDLE_FEATURE_CUSTOMER_YN,
+        actions: [
+          {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
+          {name: 'answer', text: 'No', type: 'button', value: 'no'}
+        ]
+      }]
     })
-
-    const message = { // TODO: change this to "is there a customer?" (because you can't hit Enter on an empty slack message)
-      text: 'Who is the customer? Just hit `Enter` if there is no customer.',
-      callback_id: FEATURE_COMPONENT
-    }
-
-    msg
-      .say(message)
-      .route(FEATURE_COMPONENT, state, 20)
+      .route(HANDLE_FEATURE_CUSTOMER_YN, state, 20)
   })
 
-  slapp.route(FEATURE_COMPONENT, (msg, state) => {
-    // const end = moment(msg.body.event.text.trim()).tz(config.timezone)
-    // state.end = end.toDate()
-    const message = {
-      text: `3 of 3. \`Why\`?`,
-      callback_id: FEATURE_PRIORITY
+  slapp.route(HANDLE_FEATURE_CUSTOMER_YN, (msg, state) => {
+    let answer = msg.body.actions[0].value
+    if (answer === 'no') {
+      msg.respond({
+        text: 'Which component?',
+        callback_id: HANDLE_FEATURE_CUSTOMER_NAME,
+        delete_original: true,
+        attachments: [
+          {
+            text: '',
+            fallback: '',
+            callback_id: HANDLE_FEATURE_INIT,
+            actions: components.getComponentButtons()
+          }
+        ]
+      })
+        .route(HANDLE_FEATURE_COMPONENT, state, 20)
+    } else {
+      msg.respond({
+        text: `What is the Customer name?`,
+        callback_id: HANDLE_FEATURE_CUSTOMER_NAME,
+        delete_original: true
+      })
+        .route(HANDLE_FEATURE_CUSTOMER_NAME, state, 20)
     }
-
-    msg
-      .say(message)
-      .route(FEATURE_PRIORITY, state, 60)
   })
 
-  slapp.route(FEATURE_PRIORITY, (msg, state) => {
-    state.reason = msg.body.event.text.trim()
-    const message = {
-      text: `You've requested *${moment(state.start).format('MMM D, YYYY')}* to *${moment(state.end).format('MMM D, YYYY')}* off. Is this correct?`,
-      attachments: [
-        {
-          text: '',
-          callback_id: FEATURE_CONFIRM,
-          actions: [
-            {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
-            {name: 'answer', style: 'danger', text: 'No', type: 'button', value: 'no'}
-          ]
-        }
-      ]
-    }
-
-    msg
-      .say(message)
-      .route(FEATURE_CONFIRM, state, 20)
+  slapp.route(HANDLE_FEATURE_CUSTOMER_NAME, (msg, state) => {
+    state.customer = msg.body.event.text.trim()
+    msg.say({
+      text: '',
+      callback_id: HANDLE_FEATURE_COMPONENT,
+      delete_original: true,
+      attachments: [{
+        text: 'Which component?',
+        fallback: '',
+        callback_id: HANDLE_FEATURE_INIT,
+        actions: components.getComponentButtons()
+      }]
+    })
+      .route(HANDLE_FEATURE_COMPONENT, state, 20)
   })
 
-  slapp.route(FEATURE_CONFIRM, (msg, state) => {
+  slapp.route(HANDLE_FEATURE_COMPONENT, (msg, state) => {
+    state.component = msg.body.actions[0].value
+    const owner = components.getComponentOwner(state.component)
+    const criticalButtonText = state.customer ? 'Churn Risk!' : 'Critical'
+    const promptText = state.customer ? `What is the Priority for ${state.customer}?` : `What is the Priority?`
+    msg.respond({
+      text: `${owner} is going to be thrilled to hear about a new feature request from ${state.customer}!`,
+      delete_original: true,
+      attachments: [{
+        text: promptText,
+        callback_id: HANDLE_FEATURE_PRIORITY,
+        actions: [
+          { name: 'answer', text: criticalButtonText, type: 'button', value: 'Critical' },
+          { name: 'answer', text: 'High', type: 'button', value: 'High' },
+          { name: 'answer', text: 'Medium', type: 'button', value: 'Medium' },
+          { name: 'answer', text: 'Low', type: 'button', value: 'Low' }
+        ]
+      }]
+    })
+      .route(HANDLE_FEATURE_PRIORITY, state, 20)
+  })
+
+  slapp.route(HANDLE_FEATURE_PRIORITY, (msg, state) => {
+    state.priority = msg.body.actions[0].value
+      // msg.say({
+      //   text: `You've requested *${moment(state.start).format('MMM D, YYYY')}* to *${moment(state.end).format('MMM D, YYYY')}* off. Is this correct?`,
+      //   attachments: [{
+      //     text: '',
+      //     callback_id: FEATURE_CONFIRM,
+      //     actions: [
+      //       {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
+      //       {name: 'answer', style: 'danger', text: 'No', type: 'button', value: 'no'}
+      //     ]
+      //   }]
+      // })
+      .route(HANDLE_FEATURE_CONFIRM, state, 20)
+  })
+
+  slapp.route(HANDLE_FEATURE_CONFIRM, (msg, state) => {
     const isCorrect = msg.body.actions[0].value === 'yes'
 
     if (!isCorrect) {
@@ -237,3 +250,17 @@ module.exports = (slapp) => {
 //     msg.say(timeoffMessage)
 //   })
 }
+
+// const message = {
+//   text: 'Which component?',
+//   callback_id: FEATURE_CUSTOMER,
+//   delete_original: true,
+//   attachments: [
+//     {
+//       text: '',
+//       fallback: '',
+//       callback_id: FEATURE_INIT,
+//       actions: components.getComponentButtons()
+//     }
+//   ]
+// }
