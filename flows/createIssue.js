@@ -11,14 +11,14 @@ if (process.env.JIRA_URL.startsWith('https://')) {
   }
 }
 
-// var jira = new JiraApi({
-//   protocol: 'https',
-//   host: process.env.JIRAHOST,
-//   username: process.env.JIRA_U,
-//   password: process.env.JIRA_P,
-//   apiVersion: '2',
-//   strictSSL: true
-// })
+var jira = new JiraApi({
+  protocol: 'https',
+  host: process.env.JIRAHOST,
+  username: process.env.JIRA_U,
+  password: process.env.JIRA_P,
+  apiVersion: '2',
+  strictSSL: true
+})
 
 const HANDLE_FEATURE_INIT = 'feature:init'
 const HANDLE_FEATURE_CUSTOMER_YN = 'feature:customeryn'
@@ -26,6 +26,8 @@ const HANDLE_FEATURE_CUSTOMER_NAME = 'feature:customername'
 const HANDLE_FEATURE_COMPONENT = 'feature:component'
 const HANDLE_FEATURE_PRIORITY = 'feature:priority'
 const HANDLE_FEATURE_CONFIRM = 'feature:confirm'
+const HANDLE_FEATURE_SUMMARY = 'feature:summary'
+const HANDLE_FEATURE_DESCRIPTION = 'feature:description'
 // const TIMEOFF_DATE_FINISHED = 'timeoff:finished'
 // const TIMEOFF_DATE_AUTHORIZE = 'timeoff:authorize'
 
@@ -93,7 +95,7 @@ module.exports = (slapp) => {
         ]
       }]
     })
-      .route(HANDLE_FEATURE_CUSTOMER_YN, state, 20)
+      .route(HANDLE_FEATURE_CUSTOMER_YN, state, 60)
   })
 
   slapp.route(HANDLE_FEATURE_CUSTOMER_YN, (msg, state) => {
@@ -103,23 +105,21 @@ module.exports = (slapp) => {
         text: 'Which component?',
         callback_id: HANDLE_FEATURE_CUSTOMER_NAME,
         delete_original: true,
-        attachments: [
-          {
-            text: '',
-            fallback: '',
-            callback_id: HANDLE_FEATURE_INIT,
-            actions: components.getComponentButtons()
-          }
-        ]
+        attachments: [{
+          text: '',
+          fallback: '',
+          callback_id: HANDLE_FEATURE_INIT,
+          actions: components.getComponentButtons()
+        }]
       })
-        .route(HANDLE_FEATURE_COMPONENT, state, 20)
+        .route(HANDLE_FEATURE_COMPONENT, state, 60)
     } else {
       msg.respond({
         text: `What is the Customer name?`,
         callback_id: HANDLE_FEATURE_CUSTOMER_NAME,
         delete_original: true
       })
-        .route(HANDLE_FEATURE_CUSTOMER_NAME, state, 20)
+        .route(HANDLE_FEATURE_CUSTOMER_NAME, state, 60)
     }
   })
 
@@ -136,7 +136,7 @@ module.exports = (slapp) => {
         actions: components.getComponentButtons()
       }]
     })
-      .route(HANDLE_FEATURE_COMPONENT, state, 20)
+      .route(HANDLE_FEATURE_COMPONENT, state, 60)
   })
 
   slapp.route(HANDLE_FEATURE_COMPONENT, (msg, state) => {
@@ -158,97 +158,64 @@ module.exports = (slapp) => {
         ]
       }]
     })
-      .route(HANDLE_FEATURE_PRIORITY, state, 20)
+      .route(HANDLE_FEATURE_PRIORITY, state, 60)
   })
 
   slapp.route(HANDLE_FEATURE_PRIORITY, (msg, state) => {
     state.priority = msg.body.actions[0].value
-      // msg.say({
-      //   text: `You've requested *${moment(state.start).format('MMM D, YYYY')}* to *${moment(state.end).format('MMM D, YYYY')}* off. Is this correct?`,
-      //   attachments: [{
-      //     text: '',
-      //     callback_id: FEATURE_CONFIRM,
-      //     actions: [
-      //       {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
-      //       {name: 'answer', style: 'danger', text: 'No', type: 'button', value: 'no'}
-      //     ]
-      //   }]
-      // })
-      .route(HANDLE_FEATURE_CONFIRM, state, 20)
+    msg.respond({
+      text: `Give me a one-line Summary:`,
+      callback_id: HANDLE_FEATURE_SUMMARY,
+      delete_original: true
+    })
+      .route(HANDLE_FEATURE_SUMMARY, state, 60)
+  })
+
+  slapp.route(HANDLE_FEATURE_SUMMARY, (msg, state) => {
+    state.summary = msg.body.event.text.trim()
+    msg.say({ // Note: this one needs to be a .say, not .respond?
+      text: 'Enter the Description (hit `Shift-Enter` for multiple lines, `Enter` when done)',
+      callback_id: HANDLE_FEATURE_DESCRIPTION,
+      delete_original: true
+    })
+      .route(HANDLE_FEATURE_DESCRIPTION, state, 60)
+  })
+
+  slapp.route(HANDLE_FEATURE_DESCRIPTION, (msg, state) => {
+    state.description = msg.body.event.text.trim()
+    msg.say({
+      text: 'Here\'s the feature I\'m going to create. If it looks good, click Create',
+      attachments: [{
+        text: '',
+        fallback: '',
+        callback_id: HANDLE_FEATURE_CONFIRM,
+        delete_original: true,
+        actions: [
+          { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
+          { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
+        ],
+        fields: [{title: 'Summary', value: state.summary, short: false},
+          {title: 'Customer', value: state.customer ? state.customer : 'None', short: true},
+          {title: 'Priority', value: state.priority, short: true},
+          {title: 'Component', value: state.component, short: true},
+          {title: 'Description', value: state.description, short: false}
+        ]
+
+      }]
+    })
+      .route(HANDLE_FEATURE_CONFIRM, state, 60)
   })
 
   slapp.route(HANDLE_FEATURE_CONFIRM, (msg, state) => {
-    const isCorrect = msg.body.actions[0].value === 'yes'
+    const isCorrect = msg.body.actions[0].value === 'create'
 
     if (!isCorrect) {
-      msg.respond(msg.body.response_url, {text: 'Timeoff request cancelled.'})
+      msg.respond(msg.body.response_url, {text: 'Feature creation cancelled.'})
       return
     }
 
-    const no = Object.assign({}, state, {answer: 'no'})
-    const yes = Object.assign({}, state, {answer: 'yes'})
-    msg.respond(msg.body.response_url, {text: 'Your request has been submitted.'})
-
-  //     const message = {
-  //       text: `<@${state.user.id}|${state.user.name}> has requested *${moment(state.start).format('MMM D, YYYY')}* to *${moment(state.end).format('MMM D, YYYY')}* off with reason:
-  // \`\`\`
-  // ${state.reason}
-  // \`\`\`
-  //       `,
-  //       channel: 'personnel',
-  //       // channel: 'utilities-test',
-  //       as_user: true,
-  //       attachments: [
-  //         {
-  //           text: '',
-  //           callback_id: TIMEOFF_DATE_AUTHORIZE,
-  //           actions: [
-  //             {name: 'answer', text: 'Approve', style: 'primary', type: 'button', value: JSON.stringify(yes)},
-  //             {name: 'answer', text: 'Deny', style: 'danger', type: 'button', value: JSON.stringify(no)}
-  //           ]
-  //         }
-  //       ]
-  //     }
-  //     msg
-  //       .say(message)
+    msg.respond(msg.body.response_url, {text: 'Creating...'})
   })
-
-  //   slapp.action(TIMEOFF_DATE_AUTHORIZE, (msg, answer) => {
-  //     const state = JSON.parse(answer)
-  //     const message = {
-  //       text: '',
-  //       attachments: [
-  //         {
-  //           text: `<@${state.user.id}|${state.user.name}> has requested ${moment(state.start).format('MMM D, YYYY')} to ${moment(state.end).format('MMM D, YYYY')} off for:
-  // ${state.reason}
-  //           `,
-  //           color: 'good'
-  //         }
-  //       ],
-  //       delete_original: true,
-  //       channel: msg.body.channel.id,
-  //       as_user: true,
-  //       response_type: 'in_channel'
-  //     }
-
-  //     if (state.answer === 'yes') {
-  //       message.text = `Time off request has been approved by <@${msg.body.user.id}|${msg.body.user.name}>`
-  //     } else {
-  //       message.text = `Time off request has been denied by <@${msg.body.user.id}|${msg.body.user.name}>`
-  //       message.attachments[0].color = 'danger'
-  //     }
-
-  //     msg.respond(msg.body.response_url, message)
-
-  //     const timeoffMessage = {
-  //       text: message.text,
-  //       attachments: message.attachments,
-  //       channel: state.user.id,
-  //       as_user: true
-  //     }
-
-//     msg.say(timeoffMessage)
-//   })
 }
 
 // const message = {
@@ -264,3 +231,38 @@ module.exports = (slapp) => {
 //     }
 //   ]
 // }
+
+function getFeatureCreationSummaryText (state) {
+  var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summary
+  if (state.customerName !== undefined && state.customerName !== '') {
+    text += '\n*Customer:* ' + state.customerName
+  }
+  text += '\n*Component:* ' + state.component + '\n*Priority:* ' + state.priority + '\n*Description:*\n' + state.description
+  return text
+}
+
+// fields: [{
+//           "title": "Priority",
+//           "value": "High",
+//           "short": false
+//       }
+//   ],
+
+function buildSummaryFields (state) {
+  fields = [{title: 'Summary', value: state.summary, short: false} ]
+}
+
+function buildCustomerLabel (customerName) {
+  var newStr = 'account-' + customerName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
+  return newStr
+}
+
+function getLabelArray (state) {
+  var labelArray = []
+  if (state.customerName !== undefined) {
+    labelArray.push(buildCustomerLabel(state.customerName))
+  }
+  labelArray.push(components.getComponentLabel(state.component))
+  labelArray.push('inmobot')
+  return labelArray
+}
