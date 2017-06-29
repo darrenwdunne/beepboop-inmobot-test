@@ -254,23 +254,38 @@ function getLabelArray (state) {
 }
 
 function createIssueInJIRA (msg, state) {
-  jira.addNewIssue({
-    fields: {
-      project: {key: 'DWD'}, // TODO: change to CLW
-      issuetype: {name: 'Task'},
-      summary: state.summary,
-      description: state.description + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
-      assignee: {name: components.getComponentOwnerJiraId(state.component)},
-      priority: {name: state.priority},
-      labels: getLabelArray(state)
-    }
+  // get the user's user.name in JIRA (given the email address they're using on Slack)
+  jira.searchUsers({
+    username: state.userProfile.email
   })
-    .then(issue => {
-      msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
-    // msg.say('Here is your JIRA feature:')
-      fetchIssue.outputMessage(msg, issue.key, '', '')
-    })
-    .catch(error => {
-      console.log(error.message)
+    .then(jiraUser => {
+      // user had Slack access, but not JIRA access
+      if (jiraUser.length > 0) {
+        state.jiraUserName = jiraUser[0].name
+      } else {
+        console.log(`No JIRA user name found for ${state.userProfile.email}`)
+        state.jiraUserName = 'Ddunne' // TODO: how about just don't pass anything along?
+      }
+
+      jira.addNewIssue({
+        fields: {
+          project: {key: 'DWD'}, // TODO: change to CLW
+          issuetype: {name: 'Task'},
+          summary: state.summary,
+          description: state.description + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
+          assignee: {name: components.getComponentOwnerJiraId(state.component)},
+          reporter: {name: state.jiraUserName},
+          priority: {name: state.priority},
+          labels: getLabelArray(state)
+        }
+      })
+        .then(issue => {
+          msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
+          // msg.say('Here is your JIRA feature:')
+          fetchIssue.outputMessage(msg, issue.key, '', '')
+        })
+        .catch(error => {
+          console.log(error.message)
+        })
     })
 }
