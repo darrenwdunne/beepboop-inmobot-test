@@ -1,7 +1,7 @@
 'use strict'
 
 const JiraApi = require('jira-client')
-// const fetchIssue = require('./fetchIssue')
+const fetchIssue = require('./fetchIssue')
 const components = require('./components')
 
 if (process.env.JIRA_URL.startsWith('https://')) {
@@ -183,27 +183,37 @@ module.exports = (slapp) => {
 
   slapp.route(HANDLE_FEATURE_DESCRIPTION, (msg, state) => {
     state.description = msg.body.event.text.trim()
-    msg.say({
-      text: 'Here\'s the feature I\'m going to create. If it looks good, click Create',
-      attachments: [{
-        text: '',
-        fallback: '',
-        callback_id: HANDLE_FEATURE_CONFIRM,
-        delete_original: true,
-        actions: [
-          { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
-          { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
-        ],
-        fields: [{title: 'Summary', value: state.summary, short: false},
-          {title: 'Customer', value: state.customer ? state.customer : 'None', short: true},
-          {title: 'Priority', value: state.priority, short: true},
-          {title: 'Component', value: state.component, short: true},
-          {title: 'Description', value: state.description, short: false}
-        ]
 
-      }]
+    // get the user's real name from Slack (userid is available somewhere down in msg.body, but we want a friendly name
+    slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
+      if (err) {
+        console.log(err)
+      }
+      state.userProfile = result.user.profile // incl. first_name real_name real_name_normalized email
+
+      msg.say({
+        text: "Here's the feature I'm going to create. If it looks good, click Create",
+        attachments: [{
+          text: '',
+          fallback: '',
+          callback_id: HANDLE_FEATURE_CONFIRM,
+          delete_original: true,
+          actions: [
+            { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
+            { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
+          ],
+          fields: [{title: 'Summary', value: state.summary, short: false},
+            {title: 'Customer', value: state.customer ? state.customer : 'None', short: true},
+            {title: 'Requester', value: state.userProfile.real_name, short: true},
+            {title: 'Priority', value: state.priority, short: true},
+            {title: 'Component', value: state.component, short: true},
+            {title: 'Description', value: state.description, short: false}
+          ]
+
+        }]
+      })
+        .route(HANDLE_FEATURE_CONFIRM, state, 60)
     })
-      .route(HANDLE_FEATURE_CONFIRM, state, 60)
   })
 
   slapp.route(HANDLE_FEATURE_CONFIRM, (msg, state) => {
@@ -215,42 +225,18 @@ module.exports = (slapp) => {
     }
 
     msg.respond(msg.body.response_url, {text: 'Creating...'})
+    createIssueInJIRA(msg, state)
   })
 }
 
-// const message = {
-//   text: 'Which component?',
-//   callback_id: FEATURE_CUSTOMER,
-//   delete_original: true,
-//   attachments: [
-//     {
-//       text: '',
-//       fallback: '',
-//       callback_id: FEATURE_INIT,
-//       actions: components.getComponentButtons()
-//     }
-//   ]
+// function getFeatureCreationSummaryText (state) {
+//   var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summary
+//   if (state.customerName !== undefined && state.customerName !== '') {
+//     text += '\n*Customer:* ' + state.customerName
+//   }
+//   text += '\n*Component:* ' + state.component + '\n*Priority:* ' + state.priority + '\n*Description:*\n' + state.description
+//   return text
 // }
-
-function getFeatureCreationSummaryText (state) {
-  var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summary
-  if (state.customerName !== undefined && state.customerName !== '') {
-    text += '\n*Customer:* ' + state.customerName
-  }
-  text += '\n*Component:* ' + state.component + '\n*Priority:* ' + state.priority + '\n*Description:*\n' + state.description
-  return text
-}
-
-// fields: [{
-//           "title": "Priority",
-//           "value": "High",
-//           "short": false
-//       }
-//   ],
-
-function buildSummaryFields (state) {
-  fields = [{title: 'Summary', value: state.summary, short: false} ]
-}
 
 function buildCustomerLabel (customerName) {
   var newStr = 'account-' + customerName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
@@ -265,4 +251,26 @@ function getLabelArray (state) {
   labelArray.push(components.getComponentLabel(state.component))
   labelArray.push('inmobot')
   return labelArray
+}
+
+function createIssueInJIRA (msg, state) {
+  jira.addNewIssue({
+    fields: {
+      project: {key: 'DWD'}, // TODO: change to CLW
+      issuetype: {name: 'Task'},
+      summary: state.summary,
+      description: state.description + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
+      assignee: {name: components.getComponentOwnerJiraId(state.component)},
+      priority: {name: state.priority},
+      labels: getLabelArray(state)
+    }
+  })
+    .then(issue => {
+      msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
+    // msg.say('Here is your JIRA feature:')
+      fetchIssue.outputMessage(msg, issue.key, '', '')
+    })
+    .catch(error => {
+      console.log(error.message)
+    })
 }

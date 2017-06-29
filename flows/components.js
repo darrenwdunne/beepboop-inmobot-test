@@ -18,11 +18,11 @@ function getComponentOwner (compName) {
   }
 }
 
-function getComponentOwnerId (compName) {
+function getComponentOwnerJiraId (compName) {
   var comps = getComponents()
   for (var i = 0; i < comps.length; i++) {
     if (comps[i].name === compName) {
-      return comps[i].ownerid
+      return comps[i].ownerJiraId
     }
   }
 }
@@ -61,5 +61,5 @@ function getComponentButtons () {
 
 exports.getComponentButtons = getComponentButtons
 exports.getComponentOwner = getComponentOwner
-exports.getComponentOwnerId = getComponentOwnerId
+exports.getComponentOwnerJiraId = getComponentOwnerJiraId
 exports.getComponentLabel = getComponentLabel
