@@ -1,5 +1,5 @@
 const JiraApi = require('jira-client')
-const fetchIssue = require('./fetchIssue')
+// const fetchIssue = require('./fetchIssue')
 const components = require('./components')
 
 if (process.env.JIRA_URL.startsWith('https://')) {
@@ -21,11 +21,44 @@ var jira = new JiraApi({
 })
 
 const MSG_QUIT_FEATURE_PROMPT = ', or type `quit` to stop creating the feature request'
-const MSG_FEATURE_INTRO = ['You want to create a Feature? I can help with that!\n', "Create a Feature? Let's do it!", "Let's create a Feature!"]
+// const MSG_FEATURE_INTRO = [`You want to create a Feature, ${user.firstName}? I can help with that!\n`, `Create a Feature, ${user.firstName}? Let's do it!`, `Let's create a Feature, ${user.firstName}!`]
 const MSG_QUIT_FEATURE_RESPONSES = ['A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:', "Fine! Didn't want your Feature anyway! :cry:", 'No Feature for You! :no_entry_sign:']
 
-var config = function (slapp) {
+const HANDLE_COMPONENT = 'handle:component'
+
+const featureInit = (msg) => {
+  const message = {
+    text: '',
+    attachments: [
+      {
+        text: `Hi <@${state.user.id}|${state.user.name}>, let's create a Feature! Which component is this for?`,
+        fallback: `Component?`,
+        callback_id: HANDLE_COMPONENT,
+        actions: components.getComponentButtons()
+      }
+    ],
+    channel: msg.body.user_id,
+    as_user: true
+  }
+
+  msg.say(message)
+    .route(HANDLE_COMPONENT)
+}
+
+module.exports = (slapp) => {
+  slapp.use((msg, next) => {
+    if (msg.type === 'command') {
+      if (msg.body.command.trim() === '/feature') {
+        featureInit(msg)
+        return
+      }
+    }
+    next()
+  })
+
   // "Conversation" flow that tracks state - kicks off when user says feature
+  slapp.command('/feature', /.*/, featureInit)
+
   slapp.command('/feature', (msg) => {
     var state = { requested: Date.now() }
     slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
@@ -34,22 +67,24 @@ var config = function (slapp) {
       }
       state.userProfile = result.user.profile // incl. first_name real_name real_name_normalized email
 
-      msg.say('Hi ' + state.userProfile.first_name + '!\n')
-        .say(MSG_FEATURE_INTRO)
-        .say({
+      msg.say(
+        {
           text: '',
           attachments: [
             {
-              text: 'Which component is this for? (if in doubt, just select inMotion)',
-              fallback: 'Which component is this for?',
-              callback_id: 'doit_confirm_callback', // unused?
+              text: `Hi ${state.userProfile.first_name}, let's create a Feature!  Which component is this for?`,
+              fallback: `Component?`,
+              callback_id: HANDLE_COMPONENT,
               actions: components.getComponentButtons()
-            }]
+            }
+          ],
+          channel: msg.body.user_id,
+          as_user: true
         })
-        .route('handleComponentSelection', state, 60)
+        .route(HANDLE_COMPONENT, state, 60)
     })
   })
-    .route('handleComponentSelection', (msg, state) => {
+    .route(HANDLE_COMPONENT, (msg, state) => {
       // if they respond with anything other than a button selection, get them back on track
       if (msg.type !== 'action') {
         msg
@@ -271,14 +306,12 @@ function createIssueInJIRA (msg, state) {
     .then(issue => {
       msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
       // msg.say('Here is your JIRA feature:')
-      fetchIssue.outputMessage(msg, issue.key, '', '')
+      // fetchIssue.outputMessage(msg, issue.key, '', '') // TODO: reenable this
     })
     .catch(error => {
       console.log(error.message)
     })
 }
-
-exports.config = config
 
 // jira.findIssue('REL-109')
 //   .then(issue => {
