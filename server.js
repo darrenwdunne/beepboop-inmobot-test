@@ -1,9 +1,7 @@
 // Create a new feature in JIRA via a conversation with inMoBot
 // Author: Darren Dunne
 
-// TODO: update .env and bot.yml and var on beepboop with real component ownerid
 // TODO: deal value
-// TODO: set Originator (or Watcher, if Assignee not possible/practical)
 // TODO: it's creating a Task in the DWD project - what about CLW?
 // TODO: what's the correct issue type for CLW? "Improvement" ?
 // TODO: throw early error if .env isn't setup correctly
