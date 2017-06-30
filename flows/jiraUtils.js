@@ -92,5 +92,60 @@ var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
   })
 }
 
+function getPriorityLabel (priorityName, includeText) {
+  var text = includeText ? priorityName : ''
+  switch (priorityName) {
+    case 'Critical':
+      text += ' :jira-critical:'
+      break
+    case 'High':
+      text += ' :jira-high:'
+      break
+    case 'Medium':
+      text += ' :jira-medium:'
+      break
+    case 'Low':
+      text += ' :jira-low:'
+      break
+    case 'Open':
+      text += ' :jira-open:'
+      break
+  }
+  return text
+}
+
+function getIssueColor (issuetype, priority) {
+  var color = 'good'
+  switch (issuetype) {
+    case 'Bug':
+    case 'Bug-task':
+      switch (priority) {
+        case 'Open':
+          color = 'good'
+          break
+        case 'High':
+          color = 'danger'
+          break
+        case 'Medium':
+          color = 'warning'
+          break
+      }
+      break
+    case 'Story':
+      color = '#63BA3C'
+      break
+    case 'Task':
+    case 'Sub-task':
+      color = '#4BADE8'
+      break
+    case 'Epic':
+      color = '#904EE2'
+      break
+  }
+  return color
+}
+
 exports.getIssue = getIssue
 exports.getPRStatusString = getPRStatusString
+exports.getPriorityLabel = getPriorityLabel
+exports.getIssueColor = getIssueColor

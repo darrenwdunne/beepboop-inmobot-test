@@ -3,6 +3,7 @@
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
 const components = require('./components')
+const jiraUtils = require('./jiraUtils')
 
 if (process.env.JIRA_URL.startsWith('https://')) {
   process.env.JIRAHOST = process.env.JIRA_URL.substring(8)
@@ -32,21 +33,27 @@ const HANDLE_FEATURE_DESCRIPTION = 'feature:description'
 // const TIMEOFF_DATE_AUTHORIZE = 'timeoff:authorize'
 
 const featureInit = (msg) => {
-  msg.say({
-    text: ``,
-    attachments: [{
-      text: `Hi! I see you want to create a Feature. Is this correct?`,
-      fallback: 'Are you sure?',
-      callback_id: HANDLE_FEATURE_INIT,
-      actions: [
-        {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
-        {name: 'answer', text: 'No', type: 'button', value: 'no'}
-      ]
-    }],
-    channel: msg.body.user_id,
-    as_user: true
+  msg._slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
+    if (err) {
+      console.log(err)
+    }
+    console.log(result.user.profile) // incl. first_name real_name real_name_normalized email
+    msg.say({
+      text: ``,
+      attachments: [{
+        text: `Hi ${result.user.profile.first_name}, I see you want to create a Feature. Is this correct?`,
+        fallback: 'Are you sure?',
+        callback_id: HANDLE_FEATURE_INIT,
+        actions: [
+          {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
+          {name: 'answer', text: 'No', type: 'button', value: 'no'}
+        ]
+      }],
+      channel: msg.body.user_id,
+      as_user: true
+    })
+      .route(HANDLE_FEATURE_INIT)
   })
-    .route(HANDLE_FEATURE_INIT)
 }
 
 module.exports = (slapp) => {
@@ -64,9 +71,7 @@ module.exports = (slapp) => {
 
   slapp.action(HANDLE_FEATURE_INIT, (msg) => {
     const state = {
-      init: Date.now(),
-      customer: null,
-      user: msg.body.user
+      init: Date.now()
     }
 
     let answer = msg.body.actions[0].value
@@ -82,19 +87,18 @@ module.exports = (slapp) => {
       text: `Starting feature request. You can restart at any time with the \`/feature\` command.`,
       delete_original: true
     })
-
-    msg.say({
-      text: ``,
-      attachments: [{
-        text: `Is this for a Customer?`,
-        fallback: `Is this for a Customer?`,
-        callback_id: HANDLE_FEATURE_CUSTOMER_YN,
-        actions: [
-          {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
-          {name: 'answer', text: 'No', type: 'button', value: 'no'}
-        ]
-      }]
-    })
+      .say({
+        text: ``,
+        attachments: [{
+          text: `Is this for a Customer?`,
+          fallback: `Is this for a Customer?`,
+          callback_id: HANDLE_FEATURE_CUSTOMER_YN,
+          actions: [
+            {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
+            {name: 'answer', text: 'No', type: 'button', value: 'no'}
+          ]
+        }]
+      })
       .route(HANDLE_FEATURE_CUSTOMER_YN, state, 60)
   })
 
@@ -145,16 +149,16 @@ module.exports = (slapp) => {
     const criticalButtonText = state.customer ? 'Churn Risk!' : 'Critical'
     const promptText = state.customer ? `What is the Priority for ${state.customer}?` : `What is the Priority?`
     msg.respond({
-      text: `${owner} is going to be thrilled to hear about a new feature request from ${state.customer}!`,
+      text: state.customer ? `${owner} is going to be thrilled to hear about a new ${state.component} feature request from ${state.customer}!` : `${owner} is going to be thrilled to hear about a new ${state.component} feature request!`,
       delete_original: true,
       attachments: [{
         text: promptText,
         callback_id: HANDLE_FEATURE_PRIORITY,
         actions: [
-          { name: 'answer', text: criticalButtonText, type: 'button', value: 'Critical' },
-          { name: 'answer', text: 'High', type: 'button', value: 'High' },
-          { name: 'answer', text: 'Medium', type: 'button', value: 'Medium' },
-          { name: 'answer', text: 'Low', type: 'button', value: 'Low' }
+          { name: 'answer', text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'), type: 'button', value: 'Critical' },
+          { name: 'answer', text: jiraUtils.getPriorityLabel('High', true), type: 'button', value: 'High' },
+          { name: 'answer', text: jiraUtils.getPriorityLabel('Medium', true), type: 'button', value: 'Medium' },
+          { name: 'answer', text: jiraUtils.getPriorityLabel('Low', true), type: 'button', value: 'Low' }
         ]
       }]
     })
@@ -205,7 +209,7 @@ module.exports = (slapp) => {
           fields: [{title: 'Summary', value: state.summary, short: false},
             {title: 'Customer', value: state.customer ? state.customer : 'None', short: true},
             {title: 'Requester', value: state.userProfile.real_name, short: true},
-            {title: 'Priority', value: state.priority, short: true},
+            {title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true},
             {title: 'Component', value: state.component, short: true},
             {title: 'Description', value: state.description, short: false}
           ]

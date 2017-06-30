@@ -1,6 +1,6 @@
 const moment = require('moment')
 
-const jira = require('./jira')
+const jiraUtils = require('./jiraUtils')
 
 global.previousIssue = ''
 
@@ -17,7 +17,7 @@ var config = function (slapp) {
       // process as a pull request - need to extract the url that was pasted
       var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/ // eslint-disable-line
       var urlMatch = text.match(urlPattern)
-      jira.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[0])
+      jiraUtils.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[0])
         .then(bbStr => {
           // what if user posted PX-123 and then a separate PR url? Need to make sure we only return the text for the pr (not the random issue number)
           if (match.length > 1) {
@@ -48,7 +48,7 @@ var outputMessage = function (msg, issueKey, introText, footerText) {
     // don't want to be "chatty" - if a user keeps mentioning a single issue, only report back on it once
     global.previousIssue = issueKey
     // these env vars are configured during bot installation and passed in during initialization
-    jira.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
+    jiraUtils.getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey).then(jiraIssue => {
       var avatarUrl = null
       if (jiraIssue.fields.assignee != null) {
         avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
@@ -83,7 +83,7 @@ var outputMessage = function (msg, issueKey, introText, footerText) {
           //     'short': true
           //   }
           // ],
-          color: getColor(jiraIssue.fields.issuetype.name, jiraIssue.fields.priority.name)
+          color: jiraUtils.getIssueColor(jiraIssue.fields.issuetype.name, jiraIssue.fields.priority.name)
         }]
       })
     }).catch((err) => {
@@ -97,60 +97,12 @@ var outputMessage = function (msg, issueKey, introText, footerText) {
 
 function getAttributesText (jiraIssue) {
   var text = jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName
-  text += ' | ' + jiraIssue.fields.status.name + ' | ' + jiraIssue.fields.priority.name
-  switch (jiraIssue.fields.priority.name) {
-    case 'Critical':
-      text += ' :jira-critical:'
-      break
-    case 'High':
-      text += ' :jira-high:'
-      break
-    case 'Medium':
-      text += ' :jira-medium:'
-      break
-    case 'Low':
-      text += ' :jira-low:'
-      break
-    case 'Open':
-      text += ' :jira-open:'
-      break
-  }
+  text += ' | ' + jiraIssue.fields.status.name + ' | ' + jiraUtils.getPriorityLabel(jiraIssue.fields.priority.name, true)
   if (jiraIssue.fields.duedate !== undefined && jiraIssue.fields.duedate !== null) {
     var due = moment(jiraIssue.fields.duedate)
     text += ' | Due: ' + due.format('MMM DD')
   }
   return text
-}
-
-function getColor (issuetype, priority) {
-  var color = 'good'
-  switch (issuetype) {
-    case 'Bug':
-    case 'Bug-task':
-      switch (priority) {
-        case 'Open':
-          color = 'good'
-          break
-        case 'High':
-          color = 'danger'
-          break
-        case 'Medium':
-          color = 'warning'
-          break
-      }
-      break
-    case 'Story':
-      color = '#63BA3C'
-      break
-    case 'Task':
-    case 'Sub-task':
-      color = '#4BADE8'
-      break
-    case 'Epic':
-      color = '#904EE2'
-      break
-  }
-  return color
 }
 
 exports.config = config
