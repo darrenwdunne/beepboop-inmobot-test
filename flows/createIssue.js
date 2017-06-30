@@ -233,15 +233,6 @@ module.exports = (slapp) => {
   })
 }
 
-// function getFeatureCreationSummaryText (state) {
-//   var text = "Here's the feature I'm going to create:\n\n*Summary:* " + state.summary
-//   if (state.customerName !== undefined && state.customerName !== '') {
-//     text += '\n*Customer:* ' + state.customerName
-//   }
-//   text += '\n*Component:* ' + state.component + '\n*Priority:* ' + state.priority + '\n*Description:*\n' + state.description
-//   return text
-// }
-
 function buildCustomerLabel (customerName) {
   var newStr = 'account-' + customerName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
   return newStr
@@ -263,25 +254,25 @@ function createIssueInJIRA (msg, state) {
     username: state.userProfile.email
   })
     .then(jiraUser => {
-      // user had Slack access, but not JIRA access
+      var fields = {
+        project: {key: process.env.JIRA_FEATURE_PROJECT_PREFIX},
+        issuetype: {name: 'Task'},
+        summary: state.summary,
+        description: state.description + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
+        assignee: {name: components.getComponentOwnerJiraId(state.component)},
+        priority: {name: state.priority},
+        labels: getLabelArray(state)
+      }
       if (jiraUser.length > 0) {
         state.jiraUserName = jiraUser[0].name
+        fields.reporter = {name: state.jiraUserName}
       } else {
-        console.log(`No JIRA user name found for ${state.userProfile.email}`)
-        state.jiraUserName = 'Ddunne' // TODO: how about just don't pass anything along?
+        // user had Slack access, but not JIRA access. don't set fields.reporter (inMoBot will just use the userid in the .env)
+        console.log(`Warning: No JIRA user name found for ${state.userProfile.email}`)
       }
 
       jira.addNewIssue({
-        fields: {
-          project: {key: 'DWD'}, // TODO: change to CLW
-          issuetype: {name: 'Task'},
-          summary: state.summary,
-          description: state.description + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
-          assignee: {name: components.getComponentOwnerJiraId(state.component)},
-          reporter: {name: state.jiraUserName},
-          priority: {name: state.priority},
-          labels: getLabelArray(state)
-        }
+        fields: fields
       })
         .then(issue => {
           msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text

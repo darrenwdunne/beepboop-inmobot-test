@@ -34,3 +34,8 @@ config:
   info: COMPONENT_OWNERS
   type: secret
   global: true
+- name: JIRA_FEATURE_PROJECT_PREFIX
+  friendly_name: JIRA_FEATURE_PROJECT_PREFIX
+  info: JIRA_FEATURE_PROJECT_PREFIX
+  type: secret
+  global: true
