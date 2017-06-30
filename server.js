@@ -5,6 +5,7 @@
 // TODO: deal value
 // TODO: set Originator (or Watcher, if Assignee not possible/practical)
 // TODO: it's creating a Task in the DWD project - what about CLW?
+// TODO: what's the correct issue type for CLW? "Improvement" ?
 // TODO: throw early error if .env isn't setup correctly
 
 'use strict'

@@ -29,4 +29,8 @@ config:
   info: BITBUCKET_DIFF_URL_PREFIX
   type: secret
   global: true
- 
+ - name: COMPONENT_OWNERS
+  friendly_name: COMPONENT_OWNERS
+  info: COMPONENT_OWNERS
+  type: secret
+  global: true
