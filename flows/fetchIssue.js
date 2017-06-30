@@ -4,7 +4,7 @@ const jiraUtils = require('./jiraUtils')
 
 global.previousIssue = ''
 
-var config = function (slapp) {
+module.exports = (slapp) => {
   // Respond to a JIRA issue (e.g. PX-1234)
   slapp.message(/(clw-|cs-|ra16-|mds-|px-|rel-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 'ambient'], (msg) => {
     var text = (msg.body.event && msg.body.event.text) || ''
@@ -105,5 +105,4 @@ function getAttributesText (jiraIssue) {
   return text
 }
 
-exports.config = config
 exports.outputMessage = outputMessage
