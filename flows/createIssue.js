@@ -240,8 +240,8 @@ function buildCustomerLabel (customerName) {
 
 function getLabelArray (state) {
   var labelArray = []
-  if (state.customerName !== undefined) {
-    labelArray.push(buildCustomerLabel(state.customerName))
+  if (state.customer) {
+    labelArray.push(buildCustomerLabel(state.customer))
   }
   labelArray.push(components.getComponentLabel(state.component))
   labelArray.push('inmobot')
