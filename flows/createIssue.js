@@ -2,8 +2,8 @@
 
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
-const components = require('./components')
-const jiraUtils = require('./jiraUtils')
+const components = require('./../components')
+const jiraUtils = require('./../jiraUtils')
 
 if (process.env.JIRA_URL.startsWith('https://')) {
   process.env.JIRAHOST = process.env.JIRA_URL.substring(8)

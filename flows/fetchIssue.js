@@ -1,6 +1,6 @@
 const moment = require('moment')
 
-const jiraUtils = require('./jiraUtils')
+const jiraUtils = require('./../jiraUtils')
 
 global.previousIssue = ''
 
@@ -105,4 +105,4 @@ function getAttributesText (jiraIssue) {
   return text
 }
 
-exports.outputMessage = outputMessage
+module.exports.outputMessage = outputMessage
