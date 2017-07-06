@@ -1,4 +1,7 @@
 const request = require('request')
+const Fuse = require('fuse.js')
+
+global.accountsCache = null
 
 var getIssue = function (jiraurl, jirau, jirap, issue) {
   return new Promise((resolve, reject) => {
@@ -92,6 +95,71 @@ var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
   })
 }
 
+var getFieldAllowedValues = function (jiraurl, jirau, jirap, field) {
+  return new Promise((resolve, reject) => {
+    if (field === undefined) {
+      reject(new Error('ERROR: need to provide field'))
+    } else {
+      const URL = jiraurl + '/rest/api/2/issue/createmeta?projectKeys=CLW&issuetypeNames=Improvement&expand=projects.issuetypes.fields'
+      // console.log(`Fetching allowedValues for field ${field}`)
+      request(
+        {
+          url: URL,
+          headers: {'Authorization': 'Basic ' + new Buffer(jirau + ':' + jirap).toString('base64')}
+        },
+        function (error, response, results) {
+          if (error) {
+            console.error('Error: ' + error)
+          } else {
+            var jiraData = JSON.parse(results)
+            if (!jiraData.projects[0].issuetypes[0].fields[field].allowedValues) {
+              reject(new Error(`Error: jiraData.projects[0].issuetypes[0].fields[${field}].allowedValues not found`))
+            } else {
+              var allowedValues = jiraData.projects[0].issuetypes[0].fields[field].allowedValues
+              resolve(allowedValues)
+            }
+          }
+        }
+      )
+    }
+  })
+}
+
+// refresh the global accountsCache (we want this to be available for typeahead)
+var refreshAccountsCache = function () {
+  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, 'customfield_11501').then((allowedValues) => {
+    global.accountsCache = allowedValues
+    console.log(`Refreshed accountsCache = ${global.accountsCache.length} accounts`)
+  }).catch((err) => {
+    console.log('Error refreshing accountsCache: ' + err)
+  })
+}
+
+// do a fuzzy search on Accounts
+var searchAccounts = function (searchString) {
+  var options = {
+    shouldSort: true,
+    threshold: 0.6,
+    location: 0,
+    distance: 100,
+    maxPatternLength: 32,
+    minMatchCharLength: 1,
+    keys: ['value']
+  }
+  var fuse = new Fuse(global.accountsCache, options)
+  var result = fuse.search(searchString)
+  return result
+}
+
+var buildAccountsOptionsArray = function (filteredAccountsArray) {
+  var arr = []
+  for (let i = 0; i < filteredAccountsArray.length; i++) {
+    var obj = {'text': filteredAccountsArray[i].value, 'value': filteredAccountsArray[i].value}
+    arr.push(obj) // TODO: is this sorted correctly?
+  }
+  return arr
+}
+
 function getPriorityLabel (priorityName, includeText) {
   var text = includeText ? priorityName : ''
   switch (priorityName) {
@@ -149,3 +217,7 @@ exports.getIssue = getIssue
 exports.getPRStatusString = getPRStatusString
 exports.getPriorityLabel = getPriorityLabel
 exports.getIssueColor = getIssueColor
+exports.getFieldAllowedValues = getFieldAllowedValues
+exports.searchAccounts = searchAccounts
+exports.refreshAccountsCache = refreshAccountsCache
+exports.buildAccountsOptionsArray = buildAccountsOptionsArray

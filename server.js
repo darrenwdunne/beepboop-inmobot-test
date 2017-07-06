@@ -5,6 +5,8 @@
 // TODO: it's creating a Task in the DWD project - what about CLW?
 // TODO: what's the correct issue type for CLW? "Improvement" ?
 // TODO: throw early error if .env isn't setup correctly
+// TODO: add it to the correct Account field in the created CLW
+// TODO: what about Segment size?
 
 'use strict'
 
@@ -13,6 +15,7 @@ const Slapp = require('slapp')
 const ConvoStore = require('slapp-convo-beepboop')
 const Context = require('slapp-context-beepboop')
 require('dotenv').config() // uid/pw go in .env file not checked in
+const jiraUtils = require('./jiraUtils')
 
 // use `PORT` env var on Beep Boop - default to 3000 locally
 var port = process.env.PORT || 3000
@@ -36,5 +39,5 @@ server.listen(port, (err) => {
   }
 
   console.log(`Listening on port ${port}`)
+  jiraUtils.refreshAccountsCache() // TODO: set this on a timer? or add a slash command to refresh it?
 })
-

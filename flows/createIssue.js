@@ -24,6 +24,7 @@ var jira = new JiraApi({
 const HANDLE_FEATURE_INIT = 'feature:init'
 const HANDLE_FEATURE_CUSTOMER_YN = 'feature:customeryn'
 const HANDLE_FEATURE_CUSTOMER_NAME = 'feature:customername'
+const HANDLE_FEATURE_CUSTOMER_SELECT = 'feature:customerselect'
 const HANDLE_FEATURE_COMPONENT = 'feature:component'
 const HANDLE_FEATURE_PRIORITY = 'feature:priority'
 const HANDLE_FEATURE_CONFIRM = 'feature:confirm'
@@ -37,7 +38,7 @@ const featureInit = (msg) => {
     if (err) {
       console.log(err)
     }
-    console.log(result.user.profile) // incl. first_name real_name real_name_normalized email
+    // console.log(result.user.profile) // incl. first_name real_name real_name_normalized email
     msg.say({
       text: ``,
       attachments: [{
@@ -107,7 +108,7 @@ module.exports = (slapp) => {
     if (answer === 'no') {
       msg.respond({
         text: 'Which component?',
-        callback_id: HANDLE_FEATURE_CUSTOMER_NAME,
+        callback_id: HANDLE_FEATURE_COMPONENT,
         delete_original: true,
         attachments: [{
           text: '',
@@ -119,7 +120,7 @@ module.exports = (slapp) => {
         .route(HANDLE_FEATURE_COMPONENT, state, 60)
     } else {
       msg.respond({
-        text: `What is the Customer name?`,
+        text: `Type a few characters of the Customer name, so I can give you a list to select from`,
         callback_id: HANDLE_FEATURE_CUSTOMER_NAME,
         delete_original: true
       })
@@ -128,8 +129,36 @@ module.exports = (slapp) => {
   })
 
   slapp.route(HANDLE_FEATURE_CUSTOMER_NAME, (msg, state) => {
-    state.customer = msg.body.event.text.trim()
+    // they just gave us a few characters
+    state.customershortname = msg.body.event.text.trim()
+    const searchResults = jiraUtils.searchAccounts(state.customershortname)
+    const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
+
     msg.say({
+      text: '',
+      delete_original: true,
+      response_type: 'ephemeral',
+      replace_original: true,
+      attachments: [{
+        text: 'Which specific Account?',
+        fallback: '',
+        callback_id: HANDLE_FEATURE_CUSTOMER_SELECT,
+        actions: [
+          {
+            'name': 'accounts_list',
+            'text': 'Select the Account',
+            'type': 'select',
+            'options': optionsArray
+          }
+        ]
+      }]
+    })
+      .route(HANDLE_FEATURE_CUSTOMER_SELECT, state, 60)
+  })
+
+  slapp.route(HANDLE_FEATURE_CUSTOMER_SELECT, (msg, state) => {
+    state.customer = msg.body.actions[0].selected_options[0].value
+    msg.respond({
       text: '',
       callback_id: HANDLE_FEATURE_COMPONENT,
       delete_original: true,
