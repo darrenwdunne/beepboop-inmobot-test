@@ -6,7 +6,10 @@
 // TODO: what's the correct issue type for CLW? "Improvement" ?
 // TODO: throw early error if .env isn't setup correctly
 // TODO: add it to the correct Account field in the created CLW
-// TODO: what about Segment size?
+// TODO: add Segment size
+// TODO: better flag Churn risk? how to set a flag?
+// TODO: allow user to quit midstream?
+// TODO: change Account Y/N to "Current Account / Prospective Account / No"
 
 'use strict'
 

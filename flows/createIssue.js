@@ -21,17 +21,15 @@ var jira = new JiraApi({
   strictSSL: true
 })
 
-const HANDLE_FEATURE_INIT = 'feature:init'
-const HANDLE_FEATURE_CUSTOMER_YN = 'feature:customeryn'
-const HANDLE_FEATURE_CUSTOMER_NAME = 'feature:customername'
-const HANDLE_FEATURE_CUSTOMER_SELECT = 'feature:customerselect'
-const HANDLE_FEATURE_COMPONENT = 'feature:component'
-const HANDLE_FEATURE_PRIORITY = 'feature:priority'
-const HANDLE_FEATURE_CONFIRM = 'feature:confirm'
-const HANDLE_FEATURE_SUMMARY = 'feature:summary'
-const HANDLE_FEATURE_DESCRIPTION = 'feature:description'
-// const TIMEOFF_DATE_FINISHED = 'timeoff:finished'
-// const TIMEOFF_DATE_AUTHORIZE = 'timeoff:authorize'
+const HANDLE_INIT = 'HANDLE_INIT'
+const HANDLE_ACCOUNT_YN = 'HANDLE_ACCOUNT_YN'
+const HANDLE_ACCOUNT_NAME = 'HANDLE_ACCOUNT_NAME'
+const HANDLE_ACCOUNT_SELECT = 'HANDLE_ACCOUNT_SELECT'
+const HANDLE_COMPONENT = 'HANDLE_COMPONENT'
+const HANDLE_PRIORITY = 'HANDLE_PRIORITY'
+const HANDLE_CONFIRM = 'HANDLE_CONFIRM'
+const HANDLE_SUMMARY = 'HANDLE_SUMMARY'
+const HANDLE_DESCRIPTION = 'HANDLE_DESCRIPTION'
 
 const featureInit = (msg) => {
   msg._slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
@@ -43,8 +41,7 @@ const featureInit = (msg) => {
       text: ``,
       attachments: [{
         text: `Hi ${result.user.profile.first_name}, I see you want to create a Feature. Is this correct?`,
-        fallback: 'Are you sure?',
-        callback_id: HANDLE_FEATURE_INIT,
+        callback_id: HANDLE_INIT,
         actions: [
           {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
           {name: 'answer', text: 'No', type: 'button', value: 'no'}
@@ -53,7 +50,7 @@ const featureInit = (msg) => {
       channel: msg.body.user_id,
       as_user: true
     })
-      .route(HANDLE_FEATURE_INIT)
+      .route(HANDLE_INIT)
   })
 }
 
@@ -70,7 +67,7 @@ module.exports = (slapp) => {
 
   slapp.command('/feature', /.*/, featureInit)
 
-  slapp.action(HANDLE_FEATURE_INIT, (msg) => {
+  slapp.action(HANDLE_INIT, (msg) => {
     const state = {
       init: Date.now()
     }
@@ -91,47 +88,45 @@ module.exports = (slapp) => {
       .say({
         text: ``,
         attachments: [{
-          text: `Is this for a Customer?`,
-          fallback: `Is this for a Customer?`,
-          callback_id: HANDLE_FEATURE_CUSTOMER_YN,
+          text: `Is this for an Account?`,
+          callback_id: HANDLE_ACCOUNT_YN,
           actions: [
             {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
             {name: 'answer', text: 'No', type: 'button', value: 'no'}
           ]
         }]
       })
-      .route(HANDLE_FEATURE_CUSTOMER_YN, state, 60)
+      .route(HANDLE_ACCOUNT_YN, state, 60)
   })
 
-  slapp.route(HANDLE_FEATURE_CUSTOMER_YN, (msg, state) => {
+  slapp.route(HANDLE_ACCOUNT_YN, (msg, state) => {
     let answer = msg.body.actions[0].value
     if (answer === 'no') {
       msg.respond({
         text: 'Which component?',
-        callback_id: HANDLE_FEATURE_COMPONENT,
+        callback_id: HANDLE_COMPONENT,
         delete_original: true,
         attachments: [{
           text: '',
-          fallback: '',
-          callback_id: HANDLE_FEATURE_INIT,
+          callback_id: HANDLE_INIT,
           actions: components.getComponentButtons()
         }]
       })
-        .route(HANDLE_FEATURE_COMPONENT, state, 60)
+        .route(HANDLE_COMPONENT, state, 60)
     } else {
       msg.respond({
-        text: `Type a few characters of the Customer name, so I can give you a list to select from`,
-        callback_id: HANDLE_FEATURE_CUSTOMER_NAME,
+        text: `Type a few characters of the Account name, so I can give you a list to choose from`,
+        callback_id: HANDLE_ACCOUNT_NAME,
         delete_original: true
       })
-        .route(HANDLE_FEATURE_CUSTOMER_NAME, state, 60)
+        .route(HANDLE_ACCOUNT_NAME, state, 60)
     }
   })
 
-  slapp.route(HANDLE_FEATURE_CUSTOMER_NAME, (msg, state) => {
+  slapp.route(HANDLE_ACCOUNT_NAME, (msg, state) => {
     // they just gave us a few characters
-    state.customershortname = msg.body.event.text.trim()
-    const searchResults = jiraUtils.searchAccounts(state.customershortname)
+    state.accountshortname = msg.body.event.text.trim()
+    const searchResults = jiraUtils.searchAccounts(state.accountshortname)
     const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
 
     msg.say({
@@ -141,8 +136,7 @@ module.exports = (slapp) => {
       replace_original: true,
       attachments: [{
         text: 'Which specific Account?',
-        fallback: '',
-        callback_id: HANDLE_FEATURE_CUSTOMER_SELECT,
+        callback_id: HANDLE_ACCOUNT_SELECT,
         actions: [
           {
             'name': 'accounts_list',
@@ -153,36 +147,35 @@ module.exports = (slapp) => {
         ]
       }]
     })
-      .route(HANDLE_FEATURE_CUSTOMER_SELECT, state, 60)
+      .route(HANDLE_ACCOUNT_SELECT, state, 60)
   })
 
-  slapp.route(HANDLE_FEATURE_CUSTOMER_SELECT, (msg, state) => {
-    state.customer = msg.body.actions[0].selected_options[0].value
+  slapp.route(HANDLE_ACCOUNT_SELECT, (msg, state) => {
+    state.accountName = msg.body.actions[0].selected_options[0].value
     msg.respond({
       text: '',
-      callback_id: HANDLE_FEATURE_COMPONENT,
+      callback_id: HANDLE_COMPONENT,
       delete_original: true,
       attachments: [{
         text: 'Which component?',
-        fallback: '',
-        callback_id: HANDLE_FEATURE_INIT,
+        callback_id: HANDLE_INIT,
         actions: components.getComponentButtons()
       }]
     })
-      .route(HANDLE_FEATURE_COMPONENT, state, 60)
+      .route(HANDLE_COMPONENT, state, 60)
   })
 
-  slapp.route(HANDLE_FEATURE_COMPONENT, (msg, state) => {
+  slapp.route(HANDLE_COMPONENT, (msg, state) => {
     state.component = msg.body.actions[0].value
     const owner = components.getComponentOwner(state.component)
-    const criticalButtonText = state.customer ? 'Churn Risk!' : 'Critical'
-    const promptText = state.customer ? `What is the Priority for ${state.customer}?` : `What is the Priority?`
+    const criticalButtonText = state.accountName ? 'Churn Risk!' : 'Critical'
+    const promptText = state.accountName ? `What is the Priority for ${state.accountName}?` : `What is the Priority?`
     msg.respond({
-      text: state.customer ? `${owner} is going to be thrilled to hear about a new ${state.component} feature request from ${state.customer}!` : `${owner} is going to be thrilled to hear about a new ${state.component} feature request!`,
+      text: state.accountName ? `${owner} is going to be thrilled to hear about a new ${state.component} feature request from ${state.accountName}!` : `${owner} is going to be thrilled to hear about a new ${state.component} feature request!`,
       delete_original: true,
       attachments: [{
         text: promptText,
-        callback_id: HANDLE_FEATURE_PRIORITY,
+        callback_id: HANDLE_PRIORITY,
         actions: [
           { name: 'answer', text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'), type: 'button', value: 'Critical' },
           { name: 'answer', text: jiraUtils.getPriorityLabel('High', true), type: 'button', value: 'High' },
@@ -191,30 +184,30 @@ module.exports = (slapp) => {
         ]
       }]
     })
-      .route(HANDLE_FEATURE_PRIORITY, state, 60)
+      .route(HANDLE_PRIORITY, state, 60)
   })
 
-  slapp.route(HANDLE_FEATURE_PRIORITY, (msg, state) => {
+  slapp.route(HANDLE_PRIORITY, (msg, state) => {
     state.priority = msg.body.actions[0].value
     msg.respond({
       text: `Give me a one-line Summary:`,
-      callback_id: HANDLE_FEATURE_SUMMARY,
+      callback_id: HANDLE_SUMMARY,
       delete_original: true
     })
-      .route(HANDLE_FEATURE_SUMMARY, state, 60)
+      .route(HANDLE_SUMMARY, state, 60)
   })
 
-  slapp.route(HANDLE_FEATURE_SUMMARY, (msg, state) => {
+  slapp.route(HANDLE_SUMMARY, (msg, state) => {
     state.summary = msg.body.event.text.trim()
     msg.say({ // Note: this one needs to be a .say, not .respond?
       text: 'Enter the Description (hit `Shift-Enter` for multiple lines, `Enter` when done)',
-      callback_id: HANDLE_FEATURE_DESCRIPTION,
+      callback_id: HANDLE_DESCRIPTION,
       delete_original: true
     })
-      .route(HANDLE_FEATURE_DESCRIPTION, state, 60)
+      .route(HANDLE_DESCRIPTION, state, 60)
   })
 
-  slapp.route(HANDLE_FEATURE_DESCRIPTION, (msg, state) => {
+  slapp.route(HANDLE_DESCRIPTION, (msg, state) => {
     state.description = msg.body.event.text.trim()
 
     // get the user's real name from Slack (userid is available somewhere down in msg.body, but we want a friendly name
@@ -228,15 +221,14 @@ module.exports = (slapp) => {
         text: "Here's the feature I'm going to create. If it looks good, click Create",
         attachments: [{
           text: '',
-          fallback: '',
-          callback_id: HANDLE_FEATURE_CONFIRM,
+          callback_id: HANDLE_CONFIRM,
           delete_original: true,
           actions: [
             { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
             { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
           ],
           fields: [{title: 'Summary', value: state.summary, short: false},
-            {title: 'Customer', value: state.customer ? state.customer : 'None', short: true},
+            {title: 'Account', value: state.accountName ? state.accountName : 'None', short: true},
             {title: 'Requester', value: state.userProfile.real_name, short: true},
             {title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true},
             {title: 'Component', value: state.component, short: true},
@@ -245,11 +237,11 @@ module.exports = (slapp) => {
 
         }]
       })
-        .route(HANDLE_FEATURE_CONFIRM, state, 60)
+        .route(HANDLE_CONFIRM, state, 60)
     })
   })
 
-  slapp.route(HANDLE_FEATURE_CONFIRM, (msg, state) => {
+  slapp.route(HANDLE_CONFIRM, (msg, state) => {
     const isCorrect = msg.body.actions[0].value === 'create'
 
     if (!isCorrect) {
@@ -262,15 +254,15 @@ module.exports = (slapp) => {
   })
 }
 
-function buildCustomerLabel (customerName) {
-  var newStr = 'account-' + customerName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
+function buildAccountLabel (accountName) {
+  var newStr = 'account-' + accountName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
   return newStr
 }
 
 function getLabelArray (state) {
   var labelArray = []
-  if (state.customer) {
-    labelArray.push(buildCustomerLabel(state.customer))
+  if (state.accountName) {
+    labelArray.push(buildAccountLabel(state.accountName))
   }
   labelArray.push(components.getComponentLabel(state.component))
   labelArray.push('inmobot')
