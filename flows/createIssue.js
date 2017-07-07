@@ -387,7 +387,11 @@ function isQuitter (msg, answer) {
   var quitter = false
   if (answer.toLowerCase() === 'quit') {
     quitter = true
-    msg.say([ `Quitter! :stuck_out_tongue:`, `Fine, didn't want your Feature, anyway! :sob:` ])
+    msg.say([
+      `Quitter! :stuck_out_tongue:`,
+      `Fine, didn't want your Feature, anyway! :sob:`,
+      `A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:`
+    ])
   }
   return quitter
 }
