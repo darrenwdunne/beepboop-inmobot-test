@@ -74,15 +74,13 @@ module.exports = (slapp) => {
 
     let answer = msg.body.actions[0].value
     if (answer !== 'yes') {
-      msg.respond(msg.body.response_url, {
-        text: 'A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:',
+      msg.respond(msg.body.response_url, {text: 'A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:',
         delete_original: true
       })
       return
     }
 
-    msg.respond(msg.body.response_url, {
-      text: `Starting feature request. You can restart at any time with the \`/feature\` command.`,
+    msg.respond(msg.body.response_url, {text: `Starting feature request. You can restart at any time with the \`/feature\` command.`,
       delete_original: true
     })
       .say({
@@ -91,7 +89,8 @@ module.exports = (slapp) => {
           text: `Is this for an Account?`,
           callback_id: HANDLE_ACCOUNT_YN,
           actions: [
-            {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
+            {name: 'answer', style: 'primary', text: 'Existing Account', type: 'button', value: 'existing'},
+            {name: 'answer', text: 'Prospective Account', type: 'button', value: 'prospect'},
             {name: 'answer', text: 'No', type: 'button', value: 'no'}
           ]
         }]
@@ -101,25 +100,36 @@ module.exports = (slapp) => {
 
   slapp.route(HANDLE_ACCOUNT_YN, (msg, state) => {
     let answer = msg.body.actions[0].value
-    if (answer === 'no') {
-      msg.respond({
-        text: 'Which component?',
-        callback_id: HANDLE_COMPONENT,
-        delete_original: true,
-        attachments: [{
-          text: '',
-          callback_id: HANDLE_INIT,
-          actions: components.getComponentButtons()
-        }]
-      })
-        .route(HANDLE_COMPONENT, state, 60)
-    } else {
-      msg.respond({
-        text: `Type a few characters of the Account name, so I can give you a list to choose from`,
-        callback_id: HANDLE_ACCOUNT_NAME,
-        delete_original: true
-      })
-        .route(HANDLE_ACCOUNT_NAME, state, 60)
+    switch (answer) {
+      case 'no':
+        msg.respond({text: 'Which component?',
+          callback_id: HANDLE_COMPONENT,
+          delete_original: true,
+          attachments: [{
+            text: '',
+            callback_id: HANDLE_INIT,
+            actions: components.getComponentButtons()
+          }]
+        })
+          .route(HANDLE_COMPONENT, state, 60)
+        break
+      case 'existing':
+        msg.respond({text: `Type a few characters of the Account name, so I can give you a list to choose from`,
+          callback_id: HANDLE_ACCOUNT_NAME,
+          delete_original: true
+        })
+          .route(HANDLE_ACCOUNT_NAME, state, 60)
+        break
+      case 'prospect':
+        msg.respond({text: `Type the Prospective Account name`,
+          callback_id: HANDLE_ACCOUNT_NAME,
+          delete_original: true
+        })
+          .route(HANDLE_ACCOUNT_NAME, state, 60)
+        break
+// FIXME: here
+    }
+
     }
   })
 
@@ -129,8 +139,7 @@ module.exports = (slapp) => {
     const searchResults = jiraUtils.searchAccounts(state.accountshortname)
     const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
 
-    msg.say({
-      text: '',
+    msg.say({text: '',
       delete_original: true,
       response_type: 'ephemeral',
       replace_original: true,
@@ -152,8 +161,7 @@ module.exports = (slapp) => {
 
   slapp.route(HANDLE_ACCOUNT_SELECT, (msg, state) => {
     state.accountName = msg.body.actions[0].selected_options[0].value
-    msg.respond({
-      text: '',
+    msg.respond({text: '',
       callback_id: HANDLE_COMPONENT,
       delete_original: true,
       attachments: [{

@@ -5,7 +5,7 @@
 // TODO: it's creating a Task in the DWD project - what about CLW?
 // TODO: what's the correct issue type for CLW? "Improvement" ?
 // TODO: throw early error if .env isn't setup correctly
-// TODO: add it to the correct Account field in the created CLW
+// TODO: add it to the correct Account field in the created CLW (instead of the account- label)
 // TODO: add Segment size
 // TODO: better flag Churn risk? how to set a flag?
 // TODO: allow user to quit midstream?
