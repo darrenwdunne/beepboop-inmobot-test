@@ -32,24 +32,27 @@ const HANDLE_SUMMARY = 'HANDLE_SUMMARY'
 const HANDLE_DESCRIPTION = 'HANDLE_DESCRIPTION'
 
 const featureInit = (msg) => {
-  msg._slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
+  msg._slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
     if (err) {
       console.log(err)
     }
     // console.log(result.user.profile) // incl. first_name real_name real_name_normalized email
-    msg.say({
-      text: ``,
-      attachments: [{
-        text: `Hi ${result.user.profile.first_name}, I see you want to create a Feature. Is this correct?`,
-        callback_id: HANDLE_INIT,
-        actions: [
-          {name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes'},
-          {name: 'answer', text: 'No', type: 'button', value: 'no'}
-        ]
-      }],
-      channel: msg.body.user_id,
-      as_user: true
-    })
+    msg
+      .say({
+        text: ``,
+        attachments: [
+          {
+            text: `Hi ${result.user.profile.first_name}, I see you want to create a Feature. Is this correct?`,
+            callback_id: HANDLE_INIT,
+            actions: [
+              { name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes' },
+              { name: 'answer', text: 'No', type: 'button', value: 'no' }
+            ]
+          }
+        ],
+        channel: msg.body.user_id,
+        as_user: true
+      })
       .route(HANDLE_INIT)
   })
 }
@@ -74,26 +77,31 @@ module.exports = (slapp) => {
 
     let answer = msg.body.actions[0].value
     if (answer !== 'yes') {
-      msg.respond(msg.body.response_url, {text: 'A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:',
+      msg.respond(msg.body.response_url, {
+        text: 'A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:',
         delete_original: true
       })
       return
     }
 
-    msg.respond(msg.body.response_url, {text: `Starting feature request. You can restart at any time with the \`/feature\` command.`,
-      delete_original: true
-    })
+    msg
+      .respond(msg.body.response_url, {
+        text: `Starting feature request. You can restart at any time with the \`/feature\` command.`,
+        delete_original: true
+      })
       .say({
         text: ``,
-        attachments: [{
-          text: `Is this for an Account?`,
-          callback_id: HANDLE_ACCOUNT_YN,
-          actions: [
-            {name: 'answer', style: 'primary', text: 'Existing Account', type: 'button', value: 'existing'},
-            {name: 'answer', text: 'Prospective Account', type: 'button', value: 'prospect'},
-            {name: 'answer', text: 'No', type: 'button', value: 'no'}
-          ]
-        }]
+        attachments: [
+          {
+            text: `Is this for an Account?`,
+            callback_id: HANDLE_ACCOUNT_YN,
+            actions: [
+              { name: 'answer', style: 'primary', text: 'Existing Account', type: 'button', value: 'existing' },
+              { name: 'answer', text: 'Prospective Account', type: 'button', value: 'prospect' },
+              { name: 'answer', text: 'No', type: 'button', value: 'no' }
+            ]
+          }
+        ]
       })
       .route(HANDLE_ACCOUNT_YN, state, 60)
   })
@@ -102,34 +110,40 @@ module.exports = (slapp) => {
     let answer = msg.body.actions[0].value
     switch (answer) {
       case 'no':
-        msg.respond({text: 'Which component?',
-          callback_id: HANDLE_COMPONENT,
-          delete_original: true,
-          attachments: [{
-            text: '',
-            callback_id: HANDLE_INIT,
-            actions: components.getComponentButtons()
-          }]
-        })
+        msg
+          .respond({
+            text: 'Which component?',
+            callback_id: HANDLE_COMPONENT,
+            delete_original: true,
+            attachments: [
+              {
+                text: '',
+                callback_id: HANDLE_INIT,
+                actions: components.getComponentButtons()
+              }
+            ]
+          })
           .route(HANDLE_COMPONENT, state, 60)
         break
       case 'existing':
-        msg.respond({text: `Type a few characters of the Account name, so I can give you a list to choose from`,
-          callback_id: HANDLE_ACCOUNT_NAME,
-          delete_original: true
-        })
+        msg
+          .respond({
+            text: `Type a few characters of the Account name, so I can give you a list to choose from`,
+            callback_id: HANDLE_ACCOUNT_NAME,
+            delete_original: true
+          })
           .route(HANDLE_ACCOUNT_NAME, state, 60)
         break
       case 'prospect':
-        msg.respond({text: `Type the Prospective Account name`,
-          callback_id: HANDLE_ACCOUNT_NAME,
-          delete_original: true
-        })
+        msg
+          .respond({
+            text: `Type the Prospective Account name`,
+            callback_id: HANDLE_ACCOUNT_NAME,
+            delete_original: true
+          })
           .route(HANDLE_ACCOUNT_NAME, state, 60)
         break
-// FIXME: here
-    }
-
+      // FIXME: here
     }
   })
 
@@ -139,37 +153,45 @@ module.exports = (slapp) => {
     const searchResults = jiraUtils.searchAccounts(state.accountshortname)
     const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
 
-    msg.say({text: '',
-      delete_original: true,
-      response_type: 'ephemeral',
-      replace_original: true,
-      attachments: [{
-        text: 'Which specific Account?',
-        callback_id: HANDLE_ACCOUNT_SELECT,
-        actions: [
+    msg
+      .say({
+        text: '',
+        delete_original: true,
+        response_type: 'ephemeral',
+        replace_original: true,
+        attachments: [
           {
-            'name': 'accounts_list',
-            'text': 'Select the Account',
-            'type': 'select',
-            'options': optionsArray
+            text: 'Which specific Account?',
+            callback_id: HANDLE_ACCOUNT_SELECT,
+            actions: [
+              {
+                name: 'accounts_list',
+                text: 'Select the Account',
+                type: 'select',
+                options: optionsArray
+              }
+            ]
           }
         ]
-      }]
-    })
+      })
       .route(HANDLE_ACCOUNT_SELECT, state, 60)
   })
 
   slapp.route(HANDLE_ACCOUNT_SELECT, (msg, state) => {
     state.accountName = msg.body.actions[0].selected_options[0].value
-    msg.respond({text: '',
-      callback_id: HANDLE_COMPONENT,
-      delete_original: true,
-      attachments: [{
-        text: 'Which component?',
-        callback_id: HANDLE_INIT,
-        actions: components.getComponentButtons()
-      }]
-    })
+    msg
+      .respond({
+        text: '',
+        callback_id: HANDLE_COMPONENT,
+        delete_original: true,
+        attachments: [
+          {
+            text: 'Which component?',
+            callback_id: HANDLE_INIT,
+            actions: components.getComponentButtons()
+          }
+        ]
+      })
       .route(HANDLE_COMPONENT, state, 60)
   })
 
@@ -178,40 +200,53 @@ module.exports = (slapp) => {
     const owner = components.getComponentOwner(state.component)
     const criticalButtonText = state.accountName ? 'Churn Risk!' : 'Critical'
     const promptText = state.accountName ? `What is the Priority for ${state.accountName}?` : `What is the Priority?`
-    msg.respond({
-      text: state.accountName ? `${owner} is going to be thrilled to hear about a new ${state.component} feature request from ${state.accountName}!` : `${owner} is going to be thrilled to hear about a new ${state.component} feature request!`,
-      delete_original: true,
-      attachments: [{
-        text: promptText,
-        callback_id: HANDLE_PRIORITY,
-        actions: [
-          { name: 'answer', text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'), type: 'button', value: 'Critical' },
-          { name: 'answer', text: jiraUtils.getPriorityLabel('High', true), type: 'button', value: 'High' },
-          { name: 'answer', text: jiraUtils.getPriorityLabel('Medium', true), type: 'button', value: 'Medium' },
-          { name: 'answer', text: jiraUtils.getPriorityLabel('Low', true), type: 'button', value: 'Low' }
+    msg
+      .respond({
+        text: state.accountName
+          ? `${owner} is going to be thrilled to hear about a new ${state.component} feature request from ${state.accountName}!`
+          : `${owner} is going to be thrilled to hear about a new ${state.component} feature request!`,
+        delete_original: true,
+        attachments: [
+          {
+            text: promptText,
+            callback_id: HANDLE_PRIORITY,
+            actions: [
+              {
+                name: 'answer',
+                text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'),
+                type: 'button',
+                value: 'Critical'
+              },
+              { name: 'answer', text: jiraUtils.getPriorityLabel('High', true), type: 'button', value: 'High' },
+              { name: 'answer', text: jiraUtils.getPriorityLabel('Medium', true), type: 'button', value: 'Medium' },
+              { name: 'answer', text: jiraUtils.getPriorityLabel('Low', true), type: 'button', value: 'Low' }
+            ]
+          }
         ]
-      }]
-    })
+      })
       .route(HANDLE_PRIORITY, state, 60)
   })
 
   slapp.route(HANDLE_PRIORITY, (msg, state) => {
     state.priority = msg.body.actions[0].value
-    msg.respond({
-      text: `Give me a one-line Summary:`,
-      callback_id: HANDLE_SUMMARY,
-      delete_original: true
-    })
+    msg
+      .respond({
+        text: `Give me a one-line Summary:`,
+        callback_id: HANDLE_SUMMARY,
+        delete_original: true
+      })
       .route(HANDLE_SUMMARY, state, 60)
   })
 
   slapp.route(HANDLE_SUMMARY, (msg, state) => {
     state.summary = msg.body.event.text.trim()
-    msg.say({ // Note: this one needs to be a .say, not .respond?
-      text: 'Enter the Description (hit `Shift-Enter` for multiple lines, `Enter` when done)',
-      callback_id: HANDLE_DESCRIPTION,
-      delete_original: true
-    })
+    msg
+      .say({
+        // Note: this one needs to be a .say, not .respond?
+        text: 'Enter the Description (hit `Shift-Enter` for multiple lines, `Enter` when done)',
+        callback_id: HANDLE_DESCRIPTION,
+        delete_original: true
+      })
       .route(HANDLE_DESCRIPTION, state, 60)
   })
 
@@ -219,32 +254,35 @@ module.exports = (slapp) => {
     state.description = msg.body.event.text.trim()
 
     // get the user's real name from Slack (userid is available somewhere down in msg.body, but we want a friendly name
-    slapp.client.users.info({token: msg.meta.bot_token, user: msg.meta.user_id}, (err, result) => {
+    slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
       if (err) {
         console.log(err)
       }
       state.userProfile = result.user.profile // incl. first_name real_name real_name_normalized email
 
-      msg.say({
-        text: "Here's the feature I'm going to create. If it looks good, click Create",
-        attachments: [{
-          text: '',
-          callback_id: HANDLE_CONFIRM,
-          delete_original: true,
-          actions: [
-            { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
-            { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
-          ],
-          fields: [{title: 'Summary', value: state.summary, short: false},
-            {title: 'Account', value: state.accountName ? state.accountName : 'None', short: true},
-            {title: 'Requester', value: state.userProfile.real_name, short: true},
-            {title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true},
-            {title: 'Component', value: state.component, short: true},
-            {title: 'Description', value: state.description, short: false}
+      msg
+        .say({
+          text: "Here's the feature I'm going to create. If it looks good, click Create",
+          attachments: [
+            {
+              text: '',
+              callback_id: HANDLE_CONFIRM,
+              delete_original: true,
+              actions: [
+                { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
+                { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
+              ],
+              fields: [
+                { title: 'Summary', value: state.summary, short: false },
+                { title: 'Account', value: state.accountName ? state.accountName : 'None', short: true },
+                { title: 'Requester', value: state.userProfile.real_name, short: true },
+                { title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true },
+                { title: 'Component', value: state.component, short: true },
+                { title: 'Description', value: state.description, short: false }
+              ]
+            }
           ]
-
-        }]
-      })
+        })
         .route(HANDLE_CONFIRM, state, 60)
     })
   })
@@ -253,11 +291,11 @@ module.exports = (slapp) => {
     const isCorrect = msg.body.actions[0].value === 'create'
 
     if (!isCorrect) {
-      msg.respond(msg.body.response_url, {text: 'Feature creation cancelled.'})
+      msg.respond(msg.body.response_url, { text: 'Feature creation cancelled.' })
       return
     }
 
-    msg.respond(msg.body.response_url, {text: 'Creating...'})
+    msg.respond(msg.body.response_url, { text: 'Creating...' })
     createIssueInJIRA(msg, state)
   })
 }
@@ -279,36 +317,42 @@ function getLabelArray (state) {
 
 function createIssueInJIRA (msg, state) {
   // get the user's user.name in JIRA (given the email address they're using on Slack)
-  jira.searchUsers({
-    username: state.userProfile.email
-  })
-    .then(jiraUser => {
+  jira
+    .searchUsers({
+      username: state.userProfile.email
+    })
+    .then((jiraUser) => {
       var fields = {
-        project: {key: process.env.JIRA_FEATURE_PROJECT_PREFIX},
-        issuetype: {name: 'Task'},
+        project: { key: process.env.JIRA_FEATURE_PROJECT_PREFIX },
+        issuetype: { name: 'Task' },
         summary: state.summary,
-        description: state.description + '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' + state.userProfile.real_name + '??',
-        assignee: {name: components.getComponentOwnerJiraId(state.component)},
-        priority: {name: state.priority},
+        description:
+          state.description +
+            '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' +
+            state.userProfile.real_name +
+            '??',
+        assignee: { name: components.getComponentOwnerJiraId(state.component) },
+        priority: { name: state.priority },
         labels: getLabelArray(state)
       }
       if (jiraUser.length > 0) {
         state.jiraUserName = jiraUser[0].name
-        fields.reporter = {name: state.jiraUserName}
+        fields.reporter = { name: state.jiraUserName }
       } else {
         // user had Slack access, but not JIRA access. don't set fields.reporter (inMoBot will just use the userid in the .env)
         console.log(`Warning: No JIRA user name found for ${state.userProfile.email}`)
       }
 
-      jira.addNewIssue({
-        fields: fields
-      })
-        .then(issue => {
+      jira
+        .addNewIssue({
+          fields: fields
+        })
+        .then((issue) => {
           msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
           // msg.say('Here is your JIRA feature:')
           fetchIssue.outputMessage(msg, issue.key, '', '')
         })
-        .catch(error => {
+        .catch((error) => {
           console.log(error.message)
         })
     })

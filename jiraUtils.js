@@ -1,20 +1,21 @@
 const request = require('request')
 const Fuse = require('fuse.js')
 
-global.accountsCache = null
+var accountsCache = null
+const ACCOUNTS_FIELD = 'customfield_11501'
 
 var getIssue = function (jiraurl, jirau, jirap, issue) {
   return new Promise((resolve, reject) => {
     if (issue === undefined) {
       reject(new Error('ERROR: need to provide issue'))
     } else {
-      const URL = jiraurl + '/rest/api/2/search?jql=key=' + issue + '&startAt=0&maxResults=15&fields=summary,issuetype,assignee,status,priority,key,duedate,changelog&expand=changelog'
+      const URL = `${jiraurl}/rest/api/2/search?jql=key=${issue}&startAt=0&maxResults=15&fields=summary,issuetype,assignee,status,priority,key,duedate,changelog&expand=changelog`
       console.log('fetching issue ' + issue)
       request(
         {
           url: URL,
           headers: {
-            'Authorization': 'Basic ' + new Buffer(jirau + ':' + jirap).toString('base64')
+            Authorization: 'Basic ' + Buffer.from(jirau + ':' + jirap).toString('base64')
           }
         },
         function (error, response, results) {
@@ -57,7 +58,7 @@ var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
         // get the PR (it's the first number between slashes)
         projectURL.replace(projectSlug + '/', '')
 
-        var pattern = /(\d+)/ig
+        var pattern = /(\d+)/gi
         var match = projectURL.match(pattern)
 
         if (match === undefined) {
@@ -72,7 +73,7 @@ var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
           {
             url: URL,
             headers: {
-              'Authorization': 'Basic ' + new Buffer(jirau + ':' + jirap).toString('base64')
+              Authorization: 'Basic ' + Buffer.from(jirau + ':' + jirap).toString('base64')
             }
           },
           function (error, response, results) {
@@ -100,12 +101,12 @@ var getFieldAllowedValues = function (jiraurl, jirau, jirap, field) {
     if (field === undefined) {
       reject(new Error('ERROR: need to provide field'))
     } else {
-      const URL = jiraurl + '/rest/api/2/issue/createmeta?projectKeys=CLW&issuetypeNames=Improvement&expand=projects.issuetypes.fields'
+      const URL = `${jiraurl}/rest/api/2/issue/createmeta?projectKeys=CLW&issuetypeNames=Improvement&expand=projects.issuetypes.fields`
       // console.log(`Fetching allowedValues for field ${field}`)
       request(
         {
           url: URL,
-          headers: {'Authorization': 'Basic ' + new Buffer(jirau + ':' + jirap).toString('base64')}
+          headers: { Authorization: 'Basic ' + Buffer.from(jirau + ':' + jirap).toString('base64') }
         },
         function (error, response, results) {
           if (error) {
@@ -127,12 +128,14 @@ var getFieldAllowedValues = function (jiraurl, jirau, jirap, field) {
 
 // refresh the global accountsCache (we want this to be available for typeahead)
 var refreshAccountsCache = function () {
-  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, 'customfield_11501').then((allowedValues) => {
-    global.accountsCache = allowedValues
-    console.log(`Refreshed accountsCache = ${global.accountsCache.length} accounts`)
-  }).catch((err) => {
-    console.log('Error refreshing accountsCache: ' + err)
-  })
+  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, ACCOUNTS_FIELD)
+    .then((allowedValues) => {
+      accountsCache = allowedValues
+      console.log(`Refreshed accountsCache = ${accountsCache.length} accounts`)
+    })
+    .catch((err) => {
+      console.log('Error refreshing accountsCache: ' + err)
+    })
 }
 
 // do a fuzzy search on Accounts
@@ -144,9 +147,9 @@ var searchAccounts = function (searchString) {
     distance: 100,
     maxPatternLength: 32,
     minMatchCharLength: 1,
-    keys: ['value']
+    keys: [ 'value' ]
   }
-  var fuse = new Fuse(global.accountsCache, options)
+  var fuse = new Fuse(accountsCache, options)
   var result = fuse.search(searchString)
   return result
 }
@@ -154,8 +157,8 @@ var searchAccounts = function (searchString) {
 var buildAccountsOptionsArray = function (filteredAccountsArray) {
   var arr = []
   for (let i = 0; i < filteredAccountsArray.length; i++) {
-    var obj = {'text': filteredAccountsArray[i].value, 'value': filteredAccountsArray[i].value}
-    arr.push(obj) // TODO: is this sorted correctly?
+    var obj = { text: filteredAccountsArray[i].value, value: filteredAccountsArray[i].value }
+    arr.push(obj)
   }
   return arr
 }

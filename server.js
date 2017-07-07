@@ -10,6 +10,7 @@
 // TODO: better flag Churn risk? how to set a flag?
 // TODO: allow user to quit midstream?
 // TODO: change Account Y/N to "Current Account / Prospective Account / No"
+// TODO: change the ownerJiraId in .env and beepboop to bkessman, et. al.
 
 'use strict'
 
