@@ -1,5 +1,8 @@
 'use strict'
 
+// FIXME: prospective customer shouldn't be a churn risk
+//
+
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
 const components = require('./../components')
@@ -22,7 +25,7 @@ var jira = new JiraApi({
 })
 
 const HANDLE_INIT = 'HANDLE_INIT'
-const HANDLE_ACCOUNT_YN = 'HANDLE_ACCOUNT_YN'
+const HANDLE_ACCOUNT_TYPE = 'HANDLE_ACCOUNT_TYPE'
 const HANDLE_ACCOUNT_NAME = 'HANDLE_ACCOUNT_NAME'
 const HANDLE_ACCOUNT_SELECT = 'HANDLE_ACCOUNT_SELECT'
 const HANDLE_COMPONENT = 'HANDLE_COMPONENT'
@@ -30,6 +33,10 @@ const HANDLE_PRIORITY = 'HANDLE_PRIORITY'
 const HANDLE_CONFIRM = 'HANDLE_CONFIRM'
 const HANDLE_SUMMARY = 'HANDLE_SUMMARY'
 const HANDLE_DESCRIPTION = 'HANDLE_DESCRIPTION'
+
+const ACCOUNT_TYPE_EXISTING = 'existing'
+const ACCOUNT_TYPE_PROSPECT = 'prospect'
+const ACCOUNT_TYPE_NONE = 'none'
 
 const featureInit = (msg) => {
   msg._slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
@@ -94,38 +101,45 @@ module.exports = (slapp) => {
         attachments: [
           {
             text: `Is this for an Account?`,
-            callback_id: HANDLE_ACCOUNT_YN,
+            callback_id: HANDLE_ACCOUNT_TYPE,
             actions: [
-              { name: 'answer', style: 'primary', text: 'Existing Account', type: 'button', value: 'existing' },
-              { name: 'answer', text: 'Prospective Account', type: 'button', value: 'prospect' },
-              { name: 'answer', text: 'No', type: 'button', value: 'no' }
+              {
+                name: 'answer',
+                style: 'primary',
+                text: 'Existing Account',
+                type: 'button',
+                value: ACCOUNT_TYPE_EXISTING
+              },
+              { name: 'answer', text: 'Prospective Account', type: 'button', value: ACCOUNT_TYPE_PROSPECT },
+              { name: 'answer', text: 'No', type: 'button', value: ACCOUNT_TYPE_NONE }
             ]
           }
         ]
       })
-      .route(HANDLE_ACCOUNT_YN, state, 60)
+      .route(HANDLE_ACCOUNT_TYPE, state, 60)
   })
 
-  slapp.route(HANDLE_ACCOUNT_YN, (msg, state) => {
+  const COMPONENT_MSG = {
+    text: '',
+    callback_id: HANDLE_COMPONENT,
+    delete_original: true,
+    attachments: [
+      {
+        text: 'Which component?',
+        callback_id: HANDLE_COMPONENT,
+        actions: components.getComponentButtons()
+      }
+    ]
+  }
+
+  slapp.route(HANDLE_ACCOUNT_TYPE, (msg, state) => {
     let answer = msg.body.actions[0].value
+    state.accountType = answer
     switch (answer) {
-      case 'no':
-        msg
-          .respond({
-            text: 'Which component?',
-            callback_id: HANDLE_COMPONENT,
-            delete_original: true,
-            attachments: [
-              {
-                text: '',
-                callback_id: HANDLE_INIT,
-                actions: components.getComponentButtons()
-              }
-            ]
-          })
-          .route(HANDLE_COMPONENT, state, 60)
+      case ACCOUNT_TYPE_NONE:
+        msg.respond(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
         break
-      case 'existing':
+      case ACCOUNT_TYPE_EXISTING:
         msg
           .respond({
             text: `Type a few characters of the Account name, so I can give you a list to choose from`,
@@ -134,71 +148,76 @@ module.exports = (slapp) => {
           })
           .route(HANDLE_ACCOUNT_NAME, state, 60)
         break
-      case 'prospect':
+      case ACCOUNT_TYPE_PROSPECT:
         msg
           .respond({
             text: `Type the Prospective Account name`,
-            callback_id: HANDLE_ACCOUNT_NAME,
+            callback_id: HANDLE_ACCOUNT_SELECT,
             delete_original: true
           })
-          .route(HANDLE_ACCOUNT_NAME, state, 60)
+          .route(HANDLE_ACCOUNT_SELECT, state, 60) // skip over the account selection dropdown
         break
-      // FIXME: here
     }
   })
 
   slapp.route(HANDLE_ACCOUNT_NAME, (msg, state) => {
-    // they just gave us a few characters
-    state.accountshortname = msg.body.event.text.trim()
-    const searchResults = jiraUtils.searchAccounts(state.accountshortname)
-    const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
+    var answer = msg.body.event.text.trim()
+    if (!isQuitter(msg, answer)) {
+      // they just gave us a few characters
+      state.accountshortname = answer
+      const searchResults = jiraUtils.searchAccounts(state.accountshortname)
+      const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
 
-    msg
-      .say({
-        text: '',
-        delete_original: true,
-        response_type: 'ephemeral',
-        replace_original: true,
-        attachments: [
-          {
-            text: 'Which specific Account?',
-            callback_id: HANDLE_ACCOUNT_SELECT,
-            actions: [
-              {
-                name: 'accounts_list',
-                text: 'Select the Account',
-                type: 'select',
-                options: optionsArray
-              }
-            ]
-          }
-        ]
-      })
-      .route(HANDLE_ACCOUNT_SELECT, state, 60)
+      msg
+        .say({
+          text: '',
+          delete_original: true,
+          // response_type: 'ephemeral',
+          // replace_original: true,
+          attachments: [
+            {
+              text: 'Which specific Account?',
+              callback_id: HANDLE_ACCOUNT_SELECT,
+              actions: [
+                {
+                  name: 'accounts_list',
+                  text: 'Select the Account',
+                  type: 'select',
+                  options: optionsArray
+                }
+              ]
+            }
+          ]
+        })
+        .route(HANDLE_ACCOUNT_SELECT, state, 60)
+    }
   })
 
   slapp.route(HANDLE_ACCOUNT_SELECT, (msg, state) => {
-    state.accountName = msg.body.actions[0].selected_options[0].value
-    msg
-      .respond({
-        text: '',
-        callback_id: HANDLE_COMPONENT,
-        delete_original: true,
-        attachments: [
-          {
-            text: 'Which component?',
-            callback_id: HANDLE_INIT,
-            actions: components.getComponentButtons()
-          }
-        ]
-      })
-      .route(HANDLE_COMPONENT, state, 60)
+    switch (state.accountType) {
+      case ACCOUNT_TYPE_PROSPECT:
+        const answer = msg.body.event.text.trim()
+        if (!isQuitter(msg, answer)) {
+          state.accountName = msg.body.event.text.trim()
+          // respond doesn't work here
+          msg.say(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+        }
+        break
+      case ACCOUNT_TYPE_EXISTING:
+        state.accountName = msg.body.actions[0].selected_options[0].value
+        // here, we need to respond (not say) to make the select menu disappear
+        msg.respond(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+        break
+      case ACCOUNT_TYPE_NONE:
+        console.log(`Error: shouldn't get here with ACCOUNT_TYPE_NONE?`)
+        break
+    }
   })
 
   slapp.route(HANDLE_COMPONENT, (msg, state) => {
-    state.component = msg.body.actions[0].value
+    state.component = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
     const owner = components.getComponentOwner(state.component)
-    const criticalButtonText = state.accountName ? 'Churn Risk!' : 'Critical'
+    const criticalButtonText = state.accountType === ACCOUNT_TYPE_EXISTING ? 'Churn Risk!' : 'Critical'
     const promptText = state.accountName ? `What is the Priority for ${state.accountName}?` : `What is the Priority?`
     msg
       .respond({
@@ -239,52 +258,58 @@ module.exports = (slapp) => {
   })
 
   slapp.route(HANDLE_SUMMARY, (msg, state) => {
-    state.summary = msg.body.event.text.trim()
-    msg
-      .say({
-        // Note: this one needs to be a .say, not .respond?
-        text: 'Enter the Description (hit `Shift-Enter` for multiple lines, `Enter` when done)',
-        callback_id: HANDLE_DESCRIPTION,
-        delete_original: true
-      })
-      .route(HANDLE_DESCRIPTION, state, 60)
+    const answer = msg.body.event.text.trim()
+    if (!isQuitter(msg, answer)) {
+      state.summary = answer
+      msg
+        .say({
+          // Note: this one needs to be a .say, not .respond?
+          text: 'Enter the Description (hit `Shift-Enter` for multiple lines, `Enter` when done)',
+          callback_id: HANDLE_DESCRIPTION,
+          delete_original: true
+        })
+        .route(HANDLE_DESCRIPTION, state, 60)
+    }
   })
 
   slapp.route(HANDLE_DESCRIPTION, (msg, state) => {
-    state.description = msg.body.event.text.trim()
+    const answer = msg.body.event.text.trim()
+    if (!isQuitter(msg, answer)) {
+      state.description = answer
 
-    // get the user's real name from Slack (userid is available somewhere down in msg.body, but we want a friendly name
-    slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
-      if (err) {
-        console.log(err)
-      }
-      state.userProfile = result.user.profile // incl. first_name real_name real_name_normalized email
+      // get the user's real name from Slack (userid is available somewhere down in msg.body, but we want a friendly name
+      slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
+        if (err) {
+          console.log(err)
+        }
+        state.userProfile = result.user.profile // incl. first_name real_name real_name_normalized email
 
-      msg
-        .say({
-          text: "Here's the feature I'm going to create. If it looks good, click Create",
-          attachments: [
-            {
-              text: '',
-              callback_id: HANDLE_CONFIRM,
-              delete_original: true,
-              actions: [
-                { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
-                { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
-              ],
-              fields: [
-                { title: 'Summary', value: state.summary, short: false },
-                { title: 'Account', value: state.accountName ? state.accountName : 'None', short: true },
-                { title: 'Requester', value: state.userProfile.real_name, short: true },
-                { title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true },
-                { title: 'Component', value: state.component, short: true },
-                { title: 'Description', value: state.description, short: false }
-              ]
-            }
-          ]
-        })
-        .route(HANDLE_CONFIRM, state, 60)
-    })
+        msg
+          .say({
+            text: "Here's the feature I'm going to create. If it looks good, click Create",
+            attachments: [
+              {
+                text: '',
+                callback_id: HANDLE_CONFIRM,
+                delete_original: true,
+                actions: [
+                  { name: 'answer', text: 'Create', style: 'primary', type: 'button', value: 'create' },
+                  { name: 'answer', text: 'Cancel', style: 'danger', type: 'button', value: 'cancel' }
+                ],
+                fields: [
+                  { title: 'Summary', value: state.summary, short: false },
+                  { title: 'Account', value: state.accountName ? state.accountName : 'None', short: true },
+                  { title: 'Requester', value: state.userProfile.real_name, short: true },
+                  { title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true },
+                  { title: 'Component', value: state.component, short: true },
+                  { title: 'Description', value: state.description, short: false }
+                ]
+              }
+            ]
+          })
+          .route(HANDLE_CONFIRM, state, 60)
+      })
+    }
   })
 
   slapp.route(HANDLE_CONFIRM, (msg, state) => {
@@ -356,4 +381,13 @@ function createIssueInJIRA (msg, state) {
           console.log(error.message)
         })
     })
+}
+
+function isQuitter (msg, answer) {
+  var quitter = false
+  if (answer.toLowerCase() === 'quit') {
+    quitter = true
+    msg.say([ `Quitter! :stuck_out_tongue:`, `Fine, didn't want your Feature, anyway! :sob:` ])
+  }
+  return quitter
 }
