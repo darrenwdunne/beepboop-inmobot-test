@@ -1,8 +1,5 @@
 'use strict'
 
-// FIXME: prospective customer shouldn't be a churn risk
-//
-
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
 const components = require('./../components')
