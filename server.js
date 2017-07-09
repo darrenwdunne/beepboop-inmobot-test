@@ -44,4 +44,5 @@ server.listen(port, (err) => {
 
   console.log(`Listening on port ${port}`)
   jiraUtils.refreshAccountsCache() // TODO: set this on a timer? or add a slash command to refresh it?
+  jiraUtils.refreshSegmentsCache()
 })

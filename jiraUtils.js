@@ -1,8 +1,11 @@
 const request = require('request')
 const Fuse = require('fuse.js')
 
-var accountsCache = null
 const ACCOUNTS_FIELD = 'customfield_11501'
+var accountsCache = null
+
+const SEGMENTS_FIELD = 'customfield_11600'
+var segmentsCache = null
 
 var getIssue = function (jiraurl, jirau, jirap, issue) {
   return new Promise((resolve, reject) => {
@@ -126,7 +129,7 @@ var getFieldAllowedValues = function (jiraurl, jirau, jirap, field) {
   })
 }
 
-// refresh the global accountsCache (we want this to be available for typeahead)
+// refresh the global accountsCache (we want this to be available for menu selection)
 var refreshAccountsCache = function () {
   getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, ACCOUNTS_FIELD)
     .then((allowedValues) => {
@@ -135,6 +138,18 @@ var refreshAccountsCache = function () {
     })
     .catch((err) => {
       console.log('Error refreshing accountsCache: ' + err)
+    })
+}
+
+// refresh the global segmentsCache (we want this to be available for menu selection)
+var refreshSegmentsCache = function () {
+  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, SEGMENTS_FIELD)
+    .then((allowedValues) => {
+      segmentsCache = allowedValues
+      console.log(`Refreshed segmentsCache = ${segmentsCache.length} segments`)
+    })
+    .catch((err) => {
+      console.log('Error refreshing segmentsCache: ' + err)
     })
 }
 
@@ -223,4 +238,5 @@ exports.getIssueColor = getIssueColor
 exports.getFieldAllowedValues = getFieldAllowedValues
 exports.searchAccounts = searchAccounts
 exports.refreshAccountsCache = refreshAccountsCache
+exports.refreshSegmentsCache = refreshSegmentsCache
 exports.buildAccountsOptionsArray = buildAccountsOptionsArray
