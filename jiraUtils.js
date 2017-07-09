@@ -153,11 +153,15 @@ var refreshSegmentsCache = function () {
     })
 }
 
+var getSegmentsCache = function () {
+  return segmentsCache
+}
+
 // do a fuzzy search on Accounts
 var searchAccounts = function (searchString) {
   var options = {
     shouldSort: true,
-    threshold: 0.6,
+    threshold: 0.3,
     location: 0,
     distance: 100,
     maxPatternLength: 32,
@@ -240,3 +244,4 @@ exports.searchAccounts = searchAccounts
 exports.refreshAccountsCache = refreshAccountsCache
 exports.refreshSegmentsCache = refreshSegmentsCache
 exports.buildAccountsOptionsArray = buildAccountsOptionsArray
+exports.getSegmentsCache = getSegmentsCache

@@ -26,6 +26,7 @@ const HANDLE_ACCOUNT_TYPE = 'HANDLE_ACCOUNT_TYPE'
 const HANDLE_ACCOUNT_NAME = 'HANDLE_ACCOUNT_NAME'
 const HANDLE_ACCOUNT_SELECT = 'HANDLE_ACCOUNT_SELECT'
 const HANDLE_COMPONENT = 'HANDLE_COMPONENT'
+const HANDLE_SEGMENT = 'HANDLE_SEGMENT'
 const HANDLE_PRIORITY = 'HANDLE_PRIORITY'
 const HANDLE_CONFIRM = 'HANDLE_CONFIRM'
 const HANDLE_SUMMARY = 'HANDLE_SUMMARY'
@@ -34,6 +35,8 @@ const HANDLE_DESCRIPTION = 'HANDLE_DESCRIPTION'
 const ACCOUNT_TYPE_EXISTING = 'existing'
 const ACCOUNT_TYPE_PROSPECT = 'prospect'
 const ACCOUNT_TYPE_NONE = 'none'
+
+const SEGMENT_UNKNOWN = `I don't know`
 
 const featureInit = (msg) => {
   msg._slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
@@ -48,10 +51,7 @@ const featureInit = (msg) => {
           {
             text: `Hi ${result.user.profile.first_name}, I see you want to create a Feature. Is this correct?`,
             callback_id: HANDLE_INIT,
-            actions: [
-              { name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes' },
-              { name: 'answer', text: 'No', type: 'button', value: 'no' }
-            ]
+            actions: [ { name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes' }, { name: 'answer', text: 'No', type: 'button', value: 'no' } ]
           }
         ],
         channel: msg.body.user_id,
@@ -190,6 +190,17 @@ module.exports = (slapp) => {
     }
   })
 
+  function getSegmentButtons () {
+    var segmentNames = jiraUtils.getSegmentsCache()
+    var segmentButtons = []
+    for (let i in segmentNames) {
+      var cmp = { name: 'answer', text: segmentNames[i].value, type: 'button', value: segmentNames[i].value }
+      segmentButtons.push(cmp)
+    }
+    segmentButtons.push({ name: 'answer', text: SEGMENT_UNKNOWN, type: 'button', value: SEGMENT_UNKNOWN })
+    return segmentButtons
+  }
+
   slapp.route(HANDLE_ACCOUNT_SELECT, (msg, state) => {
     switch (state.accountType) {
       case ACCOUNT_TYPE_PROSPECT:
@@ -197,18 +208,50 @@ module.exports = (slapp) => {
         if (!isQuitter(msg, answer)) {
           state.accountName = msg.body.event.text.trim()
           // respond doesn't work here
-          msg.say(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+          msg
+            .say({
+              text: '',
+              callback_id: HANDLE_SEGMENT,
+              delete_original: true,
+              attachments: [
+                {
+                  text: 'Which segment?',
+                  callback_id: HANDLE_SEGMENT,
+                  actions: getSegmentButtons()
+                }
+              ]
+            })
+            .route(HANDLE_SEGMENT, state, 60)
         }
         break
       case ACCOUNT_TYPE_EXISTING:
         state.accountName = msg.body.actions[0].selected_options[0].value
         // here, we need to respond (not say) to make the select menu disappear
-        msg.respond(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+        msg
+          .respond({
+            text: '',
+            callback_id: HANDLE_SEGMENT,
+            delete_original: true,
+            attachments: [
+              {
+                text: 'Which segment?',
+                callback_id: HANDLE_SEGMENT,
+                actions: getSegmentButtons()
+              }
+            ]
+          })
+          .route(HANDLE_SEGMENT, state, 60)
         break
       case ACCOUNT_TYPE_NONE:
         console.log(`Error: shouldn't get here with ACCOUNT_TYPE_NONE?`)
         break
     }
+  })
+
+  slapp.route(HANDLE_SEGMENT, (msg, state) => {
+    state.segment = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
+    // FIXME: isquitter
+    msg.respond(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
   })
 
   slapp.route(HANDLE_COMPONENT, (msg, state) => {
@@ -227,12 +270,7 @@ module.exports = (slapp) => {
             text: promptText,
             callback_id: HANDLE_PRIORITY,
             actions: [
-              {
-                name: 'answer',
-                text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'),
-                type: 'button',
-                value: 'Critical'
-              },
+              { name: 'answer', text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'), type: 'button', value: 'Critical' },
               { name: 'answer', text: jiraUtils.getPriorityLabel('High', true), type: 'button', value: 'High' },
               { name: 'answer', text: jiraUtils.getPriorityLabel('Medium', true), type: 'button', value: 'Medium' },
               { name: 'answer', text: jiraUtils.getPriorityLabel('Low', true), type: 'button', value: 'Low' }
@@ -348,11 +386,7 @@ function createIssueInJIRA (msg, state) {
         project: { key: process.env.JIRA_FEATURE_PROJECT_PREFIX },
         issuetype: { name: 'Task' },
         summary: state.summary,
-        description:
-          state.description +
-            '\n\n----\n\n??(*g) Created by inMoBot on behalf of ' +
-            state.userProfile.real_name +
-            '??',
+        description: `${state.description}\n\n----\n\n??(*g) Created by inMoBot on behalf of ${state.userProfile.real_name}??`,
         assignee: { name: components.getComponentOwnerJiraId(state.component) },
         priority: { name: state.priority },
         labels: getLabelArray(state)
@@ -384,11 +418,7 @@ function isQuitter (msg, answer) {
   var quitter = false
   if (answer.toLowerCase() === 'quit') {
     quitter = true
-    msg.say([
-      `Quitter! :stuck_out_tongue:`,
-      `Fine, didn't want your Feature, anyway! :sob:`,
-      `A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:`
-    ])
+    msg.say([ `Quitter! :stuck_out_tongue:`, `Fine, didn't want your Feature, anyway! :sob:`, `A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:` ])
   }
   return quitter
 }
