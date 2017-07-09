@@ -299,7 +299,7 @@ module.exports = (slapp) => {
       msg
         .say({
           // Note: this one needs to be a .say, not .respond?
-          text: 'Enter the Description (hit `Shift-Enter` for multiple lines, `Enter` when done)',
+          text: 'Enter the Description (hit `Shift-Enter` for multiple lines)',
           callback_id: HANDLE_DESCRIPTION,
           delete_original: true
         })
@@ -334,6 +334,7 @@ module.exports = (slapp) => {
                 fields: [
                   { title: 'Summary', value: state.summary, short: false },
                   { title: 'Account', value: state.accountName ? state.accountName : 'None', short: true },
+                  { title: 'Segment', value: state.segment, short: true },
                   { title: 'Requester', value: state.userProfile.real_name, short: true },
                   { title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true },
                   { title: 'Component', value: state.component, short: true },
@@ -360,16 +361,17 @@ module.exports = (slapp) => {
   })
 }
 
-function buildAccountLabel (accountName) {
-  var newStr = 'account-' + accountName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
-  return newStr
-}
+// function buildAccountLabel (accountName) {
+//   var newStr = 'account-' + accountName.replace(/ /g, '').replace(/-/, '').replace(/'/, '').toLowerCase()
+//   return newStr
+// }
 
 function getLabelArray (state) {
   var labelArray = []
-  if (state.accountName) {
-    labelArray.push(buildAccountLabel(state.accountName))
-  }
+  // this was replaced by the new Account custom field
+  // if (state.accountName) {
+  //   labelArray.push(buildAccountLabel(state.accountName))
+  // }
   labelArray.push(components.getComponentLabel(state.component))
   labelArray.push('inmobot')
   return labelArray
@@ -384,13 +386,20 @@ function createIssueInJIRA (msg, state) {
     .then((jiraUser) => {
       var fields = {
         project: { key: process.env.JIRA_FEATURE_PROJECT_PREFIX },
-        issuetype: { name: 'Task' },
+        issuetype: { name: 'Improvement' },
         summary: state.summary,
         description: `${state.description}\n\n----\n\n??(*g) Created by inMoBot on behalf of ${state.userProfile.real_name}??`,
         assignee: { name: components.getComponentOwnerJiraId(state.component) },
         priority: { name: state.priority },
         labels: getLabelArray(state)
       }
+      if (state.segment !== SEGMENT_UNKNOWN) {
+        fields[jiraUtils.CUSTOM_FIELD_SEGMENT] = [{ value: state.segment }]
+      }
+      if (state.accountName) {
+        fields[jiraUtils.CUSTOM_FIELD_ACCOUNT] = [{ value: state.accountName }]
+      }
+
       if (jiraUser.length > 0) {
         state.jiraUserName = jiraUser[0].name
         fields.reporter = { name: state.jiraUserName }

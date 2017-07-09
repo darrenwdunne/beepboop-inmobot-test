@@ -1,10 +1,10 @@
 const request = require('request')
 const Fuse = require('fuse.js')
 
-const ACCOUNTS_FIELD = 'customfield_11501'
+const CUSTOM_FIELD_ACCOUNT = 'customfield_11501'
 var accountsCache = null
 
-const SEGMENTS_FIELD = 'customfield_11600'
+const CUSTOM_FIELD_SEGMENT = 'customfield_11600'
 var segmentsCache = null
 
 var getIssue = function (jiraurl, jirau, jirap, issue) {
@@ -131,7 +131,7 @@ var getFieldAllowedValues = function (jiraurl, jirau, jirap, field) {
 
 // refresh the global accountsCache (we want this to be available for menu selection)
 var refreshAccountsCache = function () {
-  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, ACCOUNTS_FIELD)
+  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, CUSTOM_FIELD_ACCOUNT)
     .then((allowedValues) => {
       accountsCache = allowedValues
       console.log(`Refreshed accountsCache = ${accountsCache.length} accounts`)
@@ -143,7 +143,7 @@ var refreshAccountsCache = function () {
 
 // refresh the global segmentsCache (we want this to be available for menu selection)
 var refreshSegmentsCache = function () {
-  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, SEGMENTS_FIELD)
+  getFieldAllowedValues(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, CUSTOM_FIELD_SEGMENT)
     .then((allowedValues) => {
       segmentsCache = allowedValues
       console.log(`Refreshed segmentsCache = ${segmentsCache.length} segments`)
@@ -245,3 +245,5 @@ exports.refreshAccountsCache = refreshAccountsCache
 exports.refreshSegmentsCache = refreshSegmentsCache
 exports.buildAccountsOptionsArray = buildAccountsOptionsArray
 exports.getSegmentsCache = getSegmentsCache
+exports.CUSTOM_FIELD_ACCOUNT = CUSTOM_FIELD_ACCOUNT
+exports.CUSTOM_FIELD_SEGMENT = CUSTOM_FIELD_SEGMENT

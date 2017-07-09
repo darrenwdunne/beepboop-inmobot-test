@@ -11,6 +11,7 @@
 // TODO: allow user to quit midstream?
 // TODO: change Account Y/N to "Current Account / Prospective Account / No"
 // TODO: change the ownerJiraId in .env and beepboop to bkessman, et. al.
+// TODO: add the "flag" to churning accounts
 
 'use strict'
 
