@@ -33,8 +33,8 @@ const HANDLE_SUMMARY = 'HANDLE_SUMMARY'
 const HANDLE_DESCRIPTION = 'HANDLE_DESCRIPTION'
 
 const ACCOUNT_TYPE_EXISTING = 'existing'
-const ACCOUNT_TYPE_PROSPECT = 'prospect'
-const ACCOUNT_TYPE_NONE = 'none'
+const ACCOUNT_TYPE_PROSPECT = '.Prospect' // Note: this is also the text value of the field option in JIRA. Change it in JIRA, need to change here!!
+const ACCOUNT_TYPE_NONE = '.Unknown' // Note: this is also the text value of the field option in JIRA. Change it in JIRA, need to change here!!
 
 const SEGMENT_UNKNOWN = `I don't know`
 
@@ -394,10 +394,20 @@ function createIssueInJIRA (msg, state) {
         labels: getLabelArray(state)
       }
       if (state.segment !== SEGMENT_UNKNOWN) {
-        fields[jiraUtils.CUSTOM_FIELD_SEGMENT] = [{ value: state.segment }]
+        fields[jiraUtils.CUSTOM_FIELD_SEGMENT] = [ { value: state.segment } ]
       }
-      if (state.accountName) {
-        fields[jiraUtils.CUSTOM_FIELD_ACCOUNT] = [{ value: state.accountName }]
+
+      switch (state.accountType) {
+        case ACCOUNT_TYPE_PROSPECT:
+          fields[jiraUtils.CUSTOM_FIELD_ACCOUNT] = [ { value: ACCOUNT_TYPE_PROSPECT } ]
+          fields['description'] = `Prospective Customer: ${state.accountName}\n\n${fields['description']}`
+          break
+        case ACCOUNT_TYPE_NONE:
+          fields[jiraUtils.CUSTOM_FIELD_ACCOUNT] = [ { value: ACCOUNT_TYPE_NONE } ]
+          break
+        case ACCOUNT_TYPE_EXISTING:
+          fields[jiraUtils.CUSTOM_FIELD_ACCOUNT] = [ { value: state.accountName } ]
+          break
       }
 
       if (jiraUser.length > 0) {
