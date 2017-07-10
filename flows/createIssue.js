@@ -4,6 +4,7 @@ const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
 const components = require('./../components')
 const jiraUtils = require('./../jiraUtils')
+const currencyFormatter = require('currency-formatter')
 
 if (process.env.JIRA_URL.startsWith('https://')) {
   process.env.JIRAHOST = process.env.JIRA_URL.substring(8)
@@ -27,6 +28,7 @@ const HANDLE_ACCOUNT_NAME = 'HANDLE_ACCOUNT_NAME'
 const HANDLE_ACCOUNT_SELECT = 'HANDLE_ACCOUNT_SELECT'
 const HANDLE_COMPONENT = 'HANDLE_COMPONENT'
 const HANDLE_SEGMENT = 'HANDLE_SEGMENT'
+const HANDLE_DEAL_VALUE = 'HANDLE_DEAL_VALUE'
 const HANDLE_PRIORITY = 'HANDLE_PRIORITY'
 const HANDLE_CONFIRM = 'HANDLE_CONFIRM'
 const HANDLE_SUMMARY = 'HANDLE_SUMMARY'
@@ -37,6 +39,7 @@ const ACCOUNT_TYPE_PROSPECT = '.Prospect' // Note: this is also the text value o
 const ACCOUNT_TYPE_NONE = '.Unknown' // Note: this is also the text value of the field option in JIRA. Change it in JIRA, need to change here!!
 
 const SEGMENT_UNKNOWN = `I don't know`
+const DEAL_VALUE_UNKNOWN = `I don't know`
 
 const featureInit = (msg) => {
   msg._slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
@@ -206,7 +209,7 @@ module.exports = (slapp) => {
       case ACCOUNT_TYPE_PROSPECT:
         const answer = msg.body.event.text.trim()
         if (!isQuitter(msg, answer)) {
-          state.accountName = msg.body.event.text.trim()
+          state.accountName = answer
           // respond doesn't work here
           msg
             .say({
@@ -251,7 +254,33 @@ module.exports = (slapp) => {
   slapp.route(HANDLE_SEGMENT, (msg, state) => {
     state.segment = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
     // FIXME: isquitter
-    msg.respond(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+    msg.respond({
+      text: `What's the deal value, in $ ? (Just type 0 if you don't know).`,
+      callback_id: HANDLE_DEAL_VALUE,
+      delete_original: true
+    })
+      .route(HANDLE_DEAL_VALUE, state, 60)
+  })
+
+  function isNumeric (n) {
+    return !isNaN(parseFloat(n)) && isFinite(n)
+  }
+
+  slapp.route(HANDLE_DEAL_VALUE, (msg, state) => {
+    const answer = msg.body.event.text.trim()
+    if (!isQuitter(msg, answer)) {
+      if (!isNumeric(answer)) {
+        return msg.say({
+          text: `That's not a number. Please enter a number (or 0 if you don't know the deal value).`,
+          callback_id: HANDLE_DEAL_VALUE,
+          delete_original: true
+        })
+          .route(HANDLE_DEAL_VALUE, state, 60)
+      } else {
+        state.dealValue = answer
+        msg.say(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+      }
+    }
   })
 
   slapp.route(HANDLE_COMPONENT, (msg, state) => {
@@ -335,6 +364,7 @@ module.exports = (slapp) => {
                   { title: 'Summary', value: state.summary, short: false },
                   { title: 'Account', value: state.accountName ? state.accountName : 'None', short: true },
                   { title: 'Segment', value: state.segment, short: true },
+                  { title: 'Deal Value', value: currencyFormatter.format(Math.round(state.dealValue), { code: 'USD' }), short: true },
                   { title: 'Requester', value: state.userProfile.real_name, short: true },
                   { title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true },
                   { title: 'Component', value: state.component, short: true },
@@ -393,6 +423,8 @@ function createIssueInJIRA (msg, state) {
         priority: { name: state.priority },
         labels: getLabelArray(state)
       }
+      fields[jiraUtils.CUSTOM_FIELD_DEAL_VALUE] = Math.round(state.dealValue)
+
       if (state.segment !== SEGMENT_UNKNOWN) {
         fields[jiraUtils.CUSTOM_FIELD_SEGMENT] = [ { value: state.segment } ]
       }

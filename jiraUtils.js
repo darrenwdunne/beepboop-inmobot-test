@@ -7,6 +7,8 @@ var accountsCache = null
 const CUSTOM_FIELD_SEGMENT = 'customfield_11600'
 var segmentsCache = null
 
+const CUSTOM_FIELD_DEAL_VALUE = 'customfield_10006'
+
 var getIssue = function (jiraurl, jirau, jirap, issue) {
   return new Promise((resolve, reject) => {
     if (issue === undefined) {
@@ -247,3 +249,4 @@ exports.buildAccountsOptionsArray = buildAccountsOptionsArray
 exports.getSegmentsCache = getSegmentsCache
 exports.CUSTOM_FIELD_ACCOUNT = CUSTOM_FIELD_ACCOUNT
 exports.CUSTOM_FIELD_SEGMENT = CUSTOM_FIELD_SEGMENT
+exports.CUSTOM_FIELD_DEAL_VALUE = CUSTOM_FIELD_DEAL_VALUE
