@@ -2,15 +2,9 @@
 // Author: Darren Dunne
 
 // TODO: deal value
-// TODO: it's creating a Task in the DWD project - what about CLW?
-// TODO: what's the correct issue type for CLW? "Improvement" ?
 // TODO: throw early error if .env isn't setup correctly
-// TODO: add it to the correct Account field in the created CLW (instead of the account- label)
-// TODO: add Segment size
 // TODO: better flag Churn risk? how to set a flag?
 // TODO: allow user to quit midstream?
-// TODO: change Account Y/N to "Current Account / Prospective Account / No"
-// TODO: change the ownerJiraId in .env and beepboop to bkessman, et. al.
 // TODO: add the "flag" to churning accounts
 
 'use strict'
