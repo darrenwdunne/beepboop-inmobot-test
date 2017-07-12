@@ -416,7 +416,7 @@ function createIssueInJIRA (msg, state) {
     .then((jiraUser) => {
       var fields = {
         project: { key: process.env.JIRA_REQUEST_PROJECT_PREFIX },
-        issuetype: { name: 'Improvement' },
+        issuetype: { name: 'Request' },
         summary: state.summary,
         description: `${state.description}\n\n----\n\n??(*g) Created by inMoBot on behalf of ${state.userProfile.real_name}??`,
         assignee: { name: product.getProductOwnerJiraId(state.product) },

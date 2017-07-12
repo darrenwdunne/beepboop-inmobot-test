@@ -1,7 +1,6 @@
 // Create a new Request in JIRA via a conversation with inMoBot
 // Author: Darren Dunne
 
-// TODO: deal value
 // TODO: throw early error if .env isn't setup correctly
 // TODO: better flag Churn risk? how to set a flag?
 // TODO: allow user to quit midstream?
