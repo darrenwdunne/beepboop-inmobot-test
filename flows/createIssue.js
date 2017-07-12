@@ -2,7 +2,7 @@
 
 const JiraApi = require('jira-client')
 const fetchIssue = require('./fetchIssue')
-const components = require('./../components')
+const product = require('./../products')
 const jiraUtils = require('./../jiraUtils')
 const currencyFormatter = require('currency-formatter')
 
@@ -26,7 +26,7 @@ const HANDLE_INIT = 'HANDLE_INIT'
 const HANDLE_ACCOUNT_TYPE = 'HANDLE_ACCOUNT_TYPE'
 const HANDLE_ACCOUNT_NAME = 'HANDLE_ACCOUNT_NAME'
 const HANDLE_ACCOUNT_SELECT = 'HANDLE_ACCOUNT_SELECT'
-const HANDLE_COMPONENT = 'HANDLE_COMPONENT'
+const HANDLE_PRODUCT = 'HANDLE_PRODUCT'
 const HANDLE_SEGMENT = 'HANDLE_SEGMENT'
 const HANDLE_DEAL_VALUE = 'HANDLE_DEAL_VALUE'
 const HANDLE_PRIORITY = 'HANDLE_PRIORITY'
@@ -39,9 +39,9 @@ const ACCOUNT_TYPE_PROSPECT = '.Prospect' // Note: this is also the text value o
 const ACCOUNT_TYPE_NONE = '.Unknown' // Note: this is also the text value of the field option in JIRA. Change it in JIRA, need to change here!!
 
 const SEGMENT_UNKNOWN = `I don't know`
-const DEAL_VALUE_UNKNOWN = `I don't know`
+// const DEAL_VALUE_UNKNOWN = `I don't know`
 
-const featureInit = (msg) => {
+const requestInit = (msg) => {
   msg._slapp.client.users.info({ token: msg.meta.bot_token, user: msg.meta.user_id }, (err, result) => {
     if (err) {
       console.log(err)
@@ -52,7 +52,7 @@ const featureInit = (msg) => {
         text: ``,
         attachments: [
           {
-            text: `Hi ${result.user.profile.first_name}, I see you want to create a Feature. Is this correct?`,
+            text: `Hi ${result.user.profile.first_name}, I see you want to create a Request for one of the inMotion products. Is this correct?`,
             callback_id: HANDLE_INIT,
             actions: [ { name: 'answer', style: 'primary', text: 'Yes', type: 'button', value: 'yes' }, { name: 'answer', text: 'No', type: 'button', value: 'no' } ]
           }
@@ -67,15 +67,15 @@ const featureInit = (msg) => {
 module.exports = (slapp) => {
   slapp.use((msg, next) => {
     if (msg.type === 'command') {
-      if (msg.body.command.trim() === '/feature') {
-        featureInit(msg)
+      if (msg.body.command.trim() === '/request') {
+        requestInit(msg)
         return
       }
     }
     next()
   })
 
-  slapp.command('/feature', /.*/, featureInit)
+  slapp.command('/request', /.*/, requestInit)
 
   slapp.action(HANDLE_INIT, (msg) => {
     const state = {
@@ -85,7 +85,7 @@ module.exports = (slapp) => {
     let answer = msg.body.actions[0].value
     if (answer !== 'yes') {
       msg.respond(msg.body.response_url, {
-        text: 'A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:',
+        text: 'A day may come when we create a new Request, but *_It Is Not This Day!_* :crossed_swords:',
         delete_original: true
       })
       return
@@ -93,7 +93,7 @@ module.exports = (slapp) => {
 
     msg
       .respond(msg.body.response_url, {
-        text: `Starting feature request. You can restart at any time with the \`/feature\` command.`,
+        text: `Starting request. You can restart at any time with the \`/request\` command.`,
         delete_original: true
       })
       .say({
@@ -119,15 +119,15 @@ module.exports = (slapp) => {
       .route(HANDLE_ACCOUNT_TYPE, state, 60)
   })
 
-  const COMPONENT_MSG = {
+  const PRODUCT_MSG = {
     text: '',
-    callback_id: HANDLE_COMPONENT,
+    callback_id: HANDLE_PRODUCT,
     delete_original: true,
     attachments: [
       {
-        text: 'Which component?',
-        callback_id: HANDLE_COMPONENT,
-        actions: components.getComponentButtons()
+        text: 'Which product?',
+        callback_id: HANDLE_PRODUCT,
+        actions: product.getProductButtons()
       }
     ]
   }
@@ -137,7 +137,7 @@ module.exports = (slapp) => {
     state.accountType = answer
     switch (answer) {
       case ACCOUNT_TYPE_NONE:
-        msg.respond(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+        msg.respond(PRODUCT_MSG).route(HANDLE_PRODUCT, state, 60)
         break
       case ACCOUNT_TYPE_EXISTING:
         msg
@@ -278,21 +278,21 @@ module.exports = (slapp) => {
           .route(HANDLE_DEAL_VALUE, state, 60)
       } else {
         state.dealValue = answer
-        msg.say(COMPONENT_MSG).route(HANDLE_COMPONENT, state, 60)
+        msg.say(PRODUCT_MSG).route(HANDLE_PRODUCT, state, 60)
       }
     }
   })
 
-  slapp.route(HANDLE_COMPONENT, (msg, state) => {
-    state.component = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
-    const owner = components.getComponentOwner(state.component)
+  slapp.route(HANDLE_PRODUCT, (msg, state) => {
+    state.product = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
+    const owner = product.getProductOwner(state.product)
     const criticalButtonText = state.accountType === ACCOUNT_TYPE_EXISTING ? 'Churn Risk!' : 'Critical'
     const promptText = state.accountName ? `What is the Priority for ${state.accountName}?` : `What is the Priority?`
     msg
       .respond({
         text: state.accountName
-          ? `${owner} is going to be thrilled to hear about a new ${state.component} feature request from ${state.accountName}!`
-          : `${owner} is going to be thrilled to hear about a new ${state.component} feature request!`,
+          ? `${owner} is going to be thrilled to hear about a new ${state.product} request from ${state.accountName}!`
+          : `${owner} is going to be thrilled to hear about a new ${state.product} request!`,
         delete_original: true,
         attachments: [
           {
@@ -350,7 +350,7 @@ module.exports = (slapp) => {
 
         msg
           .say({
-            text: "Here's the feature I'm going to create. If it looks good, click Create",
+            text: "Here's the Request I'm going to create. If it looks good, click Create",
             attachments: [
               {
                 text: '',
@@ -367,7 +367,7 @@ module.exports = (slapp) => {
                   { title: 'Deal Value', value: currencyFormatter.format(Math.round(state.dealValue), { code: 'USD' }), short: true },
                   { title: 'Requester', value: state.userProfile.real_name, short: true },
                   { title: 'Priority', value: jiraUtils.getPriorityLabel(state.priority, true), short: true },
-                  { title: 'Component', value: state.component, short: true },
+                  { title: 'Product', value: state.product, short: true },
                   { title: 'Description', value: state.description, short: false }
                 ]
               }
@@ -382,7 +382,7 @@ module.exports = (slapp) => {
     const isCorrect = msg.body.actions[0].value === 'create'
 
     if (!isCorrect) {
-      msg.respond(msg.body.response_url, { text: 'Feature creation cancelled.' })
+      msg.respond(msg.body.response_url, { text: 'Request creation cancelled.' })
       return
     }
 
@@ -396,16 +396,16 @@ module.exports = (slapp) => {
 //   return newStr
 // }
 
-function getLabelArray (state) {
-  var labelArray = []
-  // this was replaced by the new Account custom field
-  // if (state.accountName) {
-  //   labelArray.push(buildAccountLabel(state.accountName))
-  // }
-  labelArray.push(components.getComponentLabel(state.component))
-  labelArray.push('inmobot')
-  return labelArray
-}
+// function getLabelArray (state) {
+//   var labelArray = []
+//   // this was replaced by the new Account custom field
+//   // if (state.accountName) {
+//   //   labelArray.push(buildAccountLabel(state.accountName))
+//   // }
+//   // labelArray.push(product.getProductLabel(state.product))
+//   // labelArray.push('inmobot')
+//   return labelArray
+// }
 
 function createIssueInJIRA (msg, state) {
   // get the user's user.name in JIRA (given the email address they're using on Slack)
@@ -415,18 +415,22 @@ function createIssueInJIRA (msg, state) {
     })
     .then((jiraUser) => {
       var fields = {
-        project: { key: process.env.JIRA_FEATURE_PROJECT_PREFIX },
+        project: { key: process.env.JIRA_REQUEST_PROJECT_PREFIX },
         issuetype: { name: 'Improvement' },
         summary: state.summary,
         description: `${state.description}\n\n----\n\n??(*g) Created by inMoBot on behalf of ${state.userProfile.real_name}??`,
-        assignee: { name: components.getComponentOwnerJiraId(state.component) },
-        priority: { name: state.priority },
-        labels: getLabelArray(state)
+        assignee: { name: product.getProductOwnerJiraId(state.product) },
+        priority: { name: state.priority }
+      // labels: getLabelArray(state)
       }
       fields[jiraUtils.CUSTOM_FIELD_DEAL_VALUE] = Math.round(state.dealValue)
 
       if (state.segment !== SEGMENT_UNKNOWN) {
         fields[jiraUtils.CUSTOM_FIELD_SEGMENT] = [ { value: state.segment } ]
+      }
+
+      if (state.product) {
+        fields[jiraUtils.CUSTOM_FIELD_PRODUCT] = [ { value: state.product } ]
       }
 
       switch (state.accountType) {
@@ -455,8 +459,7 @@ function createIssueInJIRA (msg, state) {
           fields: fields
         })
         .then((issue) => {
-          msg.respond(msg.body.response_url, { text: 'Here is your JIRA feature:', delete_original: true }) // remove the "Creating" text
-          // msg.say('Here is your JIRA feature:')
+          msg.respond(msg.body.response_url, { text: 'Here is your new Request in the Client Wish List:', delete_original: true }) // remove the "Creating" text
           fetchIssue.outputMessage(msg, issue.key, '', '')
         })
         .catch((error) => {
@@ -469,7 +472,7 @@ function isQuitter (msg, answer) {
   var quitter = false
   if (answer.toLowerCase() === 'quit') {
     quitter = true
-    msg.say([ `Quitter! :stuck_out_tongue:`, `Fine, didn't want your Feature, anyway! :sob:`, `A day may come when we create a Feature, but *_It Is Not This Day!_* :crossed_swords:` ])
+    msg.say([ `Quitter! :stuck_out_tongue:`, `Fine, didn't want your new Request, anyway! :sob:`, `A day may come when we create a Request, but *_It Is Not This Day!_* :crossed_swords:` ])
   }
   return quitter
 }

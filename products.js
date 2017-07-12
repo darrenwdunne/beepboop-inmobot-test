@@ -1,7 +1,7 @@
 require('dotenv').config() // uid/pw go in .env file not checked in
 
-var getComponents = function () {
-  var comps = JSON.parse(process.env.COMPONENT_OWNERS)
+var getProducts = function () {
+  var comps = JSON.parse(process.env.PRODUCT_OWNERS)
   // for (var i=0; i<comps.length; i++) {
   //   var comp = comps[i]
   //   console.log(comp)
@@ -9,8 +9,8 @@ var getComponents = function () {
   return comps
 }
 
-function getComponentOwner (compName) {
-  var comps = getComponents()
+function getProductOwner (compName) {
+  var comps = getProducts()
   for (var i = 0; i < comps.length; i++) {
     if (comps[i].name === compName) {
       return comps[i].owner
@@ -18,8 +18,8 @@ function getComponentOwner (compName) {
   }
 }
 
-function getComponentOwnerJiraId (compName) {
-  var comps = getComponents()
+function getProductOwnerJiraId (compName) {
+  var comps = getProducts()
   for (var i = 0; i < comps.length; i++) {
     if (comps[i].name === compName) {
       return comps[i].ownerJiraId
@@ -27,8 +27,8 @@ function getComponentOwnerJiraId (compName) {
   }
 }
 
-function getComponentLabel (compName) {
-  var comps = getComponents()
+function getProductLabel (compName) {
+  var comps = getProducts()
   for (var i = 0; i < comps.length; i++) {
     if (comps[i].name === compName) {
       return comps[i].label
@@ -36,8 +36,8 @@ function getComponentLabel (compName) {
   }
 }
 
-function getComponentNames () {
-  var comps = getComponents()
+function getProductNames () {
+  var comps = getProducts()
   var names = []
   for (var i = 0; i < comps.length; i++) {
     names.push(comps[i].name)
@@ -45,12 +45,12 @@ function getComponentNames () {
   return names
 }
 
-// console.log(getComponentOwner('Proximus'))
-// console.log(getComponentOwner('R + A'))
-// console.log(getComponentNames())
+// console.log(getProductOwner('Proximus'))
+// console.log(getProductOwner('R + A'))
+// console.log(getProductNames())
 
-function getComponentButtons () {
-  var compNames = getComponentNames()
+function getProductButtons () {
+  var compNames = getProductNames()
   var compButtons = []
   for (let i in compNames) {
     var cmp = { name: 'answer', text: compNames[i], type: 'button', value: compNames[i] }
@@ -59,7 +59,7 @@ function getComponentButtons () {
   return compButtons
 }
 
-exports.getComponentButtons = getComponentButtons
-exports.getComponentOwner = getComponentOwner
-exports.getComponentOwnerJiraId = getComponentOwnerJiraId
-exports.getComponentLabel = getComponentLabel
+exports.getProductButtons = getProductButtons
+exports.getProductOwner = getProductOwner
+exports.getProductOwnerJiraId = getProductOwnerJiraId
+exports.getProductLabel = getProductLabel

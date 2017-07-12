@@ -9,6 +9,8 @@ var segmentsCache = null
 
 const CUSTOM_FIELD_DEAL_VALUE = 'customfield_10006'
 
+const CUSTOM_FIELD_PRODUCT = 'customfield_11700'
+
 var getIssue = function (jiraurl, jirau, jirap, issue) {
   return new Promise((resolve, reject) => {
     if (issue === undefined) {
@@ -20,7 +22,7 @@ var getIssue = function (jiraurl, jirau, jirap, issue) {
         {
           url: URL,
           headers: {
-            Authorization: 'Basic ' + Buffer.from(jirau + ':' + jirap).toString('base64')
+            Authorization: 'Basic ' + Buffer.from(`${jirau}:${jirap}`).toString('base64')
           }
         },
         function (error, response, results) {
@@ -78,7 +80,7 @@ var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
           {
             url: URL,
             headers: {
-              Authorization: 'Basic ' + Buffer.from(jirau + ':' + jirap).toString('base64')
+              Authorization: 'Basic ' + Buffer.from(`${jirau}:${jirap}`).toString('base64')
             }
           },
           function (error, response, results) {
@@ -106,12 +108,12 @@ var getFieldAllowedValues = function (jiraurl, jirau, jirap, field) {
     if (field === undefined) {
       reject(new Error('ERROR: need to provide field'))
     } else {
-      const URL = `${jiraurl}/rest/api/2/issue/createmeta?projectKeys=CLW&issuetypeNames=Improvement&expand=projects.issuetypes.fields`
+      const URL = `${jiraurl}/rest/api/2/issue/createmeta?projectKeys=CLW&issuetypeNames=Request&expand=projects.issuetypes.fields`
       // console.log(`Fetching allowedValues for field ${field}`)
       request(
         {
           url: URL,
-          headers: { Authorization: 'Basic ' + Buffer.from(jirau + ':' + jirap).toString('base64') }
+          headers: { Authorization: 'Basic ' + Buffer.from(`${jirau}:${jirap}`).toString('base64') }
         },
         function (error, response, results) {
           if (error) {
@@ -250,3 +252,4 @@ exports.getSegmentsCache = getSegmentsCache
 exports.CUSTOM_FIELD_ACCOUNT = CUSTOM_FIELD_ACCOUNT
 exports.CUSTOM_FIELD_SEGMENT = CUSTOM_FIELD_SEGMENT
 exports.CUSTOM_FIELD_DEAL_VALUE = CUSTOM_FIELD_DEAL_VALUE
+exports.CUSTOM_FIELD_PRODUCT = CUSTOM_FIELD_PRODUCT
