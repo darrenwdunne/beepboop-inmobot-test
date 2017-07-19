@@ -2,7 +2,6 @@
 // Author: Darren Dunne
 
 // TODO: throw early error if .env isn't setup correctly
-// TODO: allow user to quit midstream?
 
 'use strict'
 

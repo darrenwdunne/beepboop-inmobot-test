@@ -70,45 +70,47 @@ module.exports = (slapp) => {
 
   slapp.command('/request', /.*/, requestInit)
 
-  slapp.action(HANDLE_INIT, (msg) => {
-    const state = {
-      init: Date.now()
-    }
+  slapp.action(HANDLE_INIT, (msg) => { // was .action, but want to also catch user typing text
+    if (!isQuitter(msg)) {
+      const state = {
+        init: Date.now()
+      }
 
-    let answer = msg.body.actions[0].value
-    if (answer !== 'yes') {
+      let answer = msg.body.actions[0].value
+      if (answer !== 'yes') {
+        msg.respond(msg.body.response_url, {
+          text: 'A day may come when we create a new Request, but *_It Is Not This Day!_* :crossed_swords:',
+          delete_original: true
+        })
+        return
+      }
+
       msg.respond(msg.body.response_url, {
-        text: 'A day may come when we create a new Request, but *_It Is Not This Day!_* :crossed_swords:',
+        text: `Starting request. You can quit at any time by typing \`quit\``,
         delete_original: true
       })
-      return
+        .say({
+          text: ``,
+          attachments: [
+            {
+              text: `Is this for an Account?`,
+              callback_id: HANDLE_ACCOUNT_TYPE,
+              actions: [
+                {
+                  name: 'answer',
+                  style: 'primary',
+                  text: 'Existing Account',
+                  type: 'button',
+                  value: ACCOUNT_TYPE_EXISTING
+                },
+                { name: 'answer', text: 'Prospective Account', type: 'button', value: ACCOUNT_TYPE_PROSPECT },
+                { name: 'answer', text: 'No', type: 'button', value: ACCOUNT_TYPE_NONE }
+              ]
+            }
+          ]
+        })
+        .route(HANDLE_ACCOUNT_TYPE, state, 60)
     }
-
-    msg.respond(msg.body.response_url, {
-      text: `Starting request. You can restart at any time with the \`/request\` command.`,
-      delete_original: true
-    })
-      .say({
-        text: ``,
-        attachments: [
-          {
-            text: `Is this for an Account?`,
-            callback_id: HANDLE_ACCOUNT_TYPE,
-            actions: [
-              {
-                name: 'answer',
-                style: 'primary',
-                text: 'Existing Account',
-                type: 'button',
-                value: ACCOUNT_TYPE_EXISTING
-              },
-              { name: 'answer', text: 'Prospective Account', type: 'button', value: ACCOUNT_TYPE_PROSPECT },
-              { name: 'answer', text: 'No', type: 'button', value: ACCOUNT_TYPE_NONE }
-            ]
-          }
-        ]
-      })
-      .route(HANDLE_ACCOUNT_TYPE, state, 60)
   })
 
   const PRODUCT_MSG = {
@@ -125,129 +127,139 @@ module.exports = (slapp) => {
   }
 
   slapp.route(HANDLE_ACCOUNT_TYPE, (msg, state) => {
-    let answer = msg.body.actions[0].value
-    state.accountType = answer
-    switch (answer) {
-      case ACCOUNT_TYPE_NONE:
-        msg.respond(PRODUCT_MSG).route(HANDLE_PRODUCT, state, 60)
-        break
-      case ACCOUNT_TYPE_EXISTING:
-        msg
-          .respond({
-            text: `Type a few characters of the Account name, so I can give you a list to choose from`,
-            callback_id: HANDLE_ACCOUNT_NAME,
-            delete_original: true
-          })
-          .route(HANDLE_ACCOUNT_NAME, state, 60)
-        break
-      case ACCOUNT_TYPE_PROSPECT:
-        msg
-          .respond({
-            text: `Type the Prospective Account name`,
-            callback_id: HANDLE_ACCOUNT_SELECT,
-            delete_original: true
-          })
-          .route(HANDLE_ACCOUNT_SELECT, state, 60) // skip over the account selection dropdown
-        break
+    if (!isQuitter(msg)) {
+      let answer = msg.body.actions[0].value
+      state.accountType = answer
+      switch (answer) {
+        case ACCOUNT_TYPE_NONE:
+          msg.respond(PRODUCT_MSG).route(HANDLE_PRODUCT, state, 60)
+          break
+        case ACCOUNT_TYPE_EXISTING:
+          msg
+            .respond({
+              text: `Type a few characters of the Account name, so I can give you a list to choose from`,
+              callback_id: HANDLE_ACCOUNT_NAME,
+              delete_original: true
+            })
+            .route(HANDLE_ACCOUNT_NAME, state, 60)
+          break
+        case ACCOUNT_TYPE_PROSPECT:
+          msg
+            .respond({
+              text: `Type the Prospective Account name`,
+              callback_id: HANDLE_ACCOUNT_SELECT,
+              delete_original: true
+            })
+            .route(HANDLE_ACCOUNT_SELECT, state, 60) // skip over the account selection dropdown
+          break
+      }
     }
   })
 
   slapp.route(HANDLE_ACCOUNT_NAME, (msg, state) => {
-    var answer = msg.body.event.text.trim()
-    if (!isQuitter(msg, answer)) {
-      // they just gave us a few characters
-      state.accountshortname = answer
-      const searchResults = jiraUtils.searchAccounts(state.accountshortname)
-      const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
+    if (!isQuitter(msg)) {
+      var answer = msg.body.event.text.trim()
+      if (!isQuitter(msg, answer)) {
+        // they just gave us a few characters
+        state.accountshortname = answer
+        const searchResults = jiraUtils.searchAccounts(state.accountshortname)
+        const optionsArray = jiraUtils.buildAccountsOptionsArray(searchResults)
 
-      msg.say({
-        text: '',
-        delete_original: true,
-        // response_type: 'ephemeral',
-        // replace_original: true,
-        attachments: [
-          {
-            text: 'Which specific Account?',
-            callback_id: HANDLE_ACCOUNT_SELECT,
-            actions: [
-              {
-                name: 'accounts_list',
-                text: 'Select the Account',
-                type: 'select',
-                options: optionsArray
-              }
-            ]
-          }
-        ]
-      })
-        .route(HANDLE_ACCOUNT_SELECT, state, 60)
+        msg.say({
+          text: '',
+          delete_original: true,
+          // response_type: 'ephemeral',
+          // replace_original: true,
+          attachments: [
+            {
+              text: 'Which specific Account?',
+              callback_id: HANDLE_ACCOUNT_SELECT,
+              actions: [
+                {
+                  name: 'accounts_list',
+                  text: 'Select the Account',
+                  type: 'select',
+                  options: optionsArray
+                }
+              ]
+            }
+          ]
+        })
+          .route(HANDLE_ACCOUNT_SELECT, state, 60)
+      }
     }
   })
 
   slapp.route(HANDLE_ACCOUNT_SELECT, (msg, state) => {
-    switch (state.accountType) {
-      case ACCOUNT_TYPE_PROSPECT:
-        const answer = msg.body.event.text.trim()
-        if (!isQuitter(msg, answer)) {
-          state.accountName = answer
-          // respond doesn't work here
+    if (!isQuitter(msg)) {
+      switch (state.accountType) {
+        case ACCOUNT_TYPE_PROSPECT:
+          const answer = msg.body.event.text.trim()
+          if (!isQuitter(msg, answer)) {
+            state.accountName = answer
+            // respond doesn't work here
+            msg
+              .say(PRODUCT_MSG)
+              .route(HANDLE_PRODUCT, state, 60)
+          }
+          break
+        case ACCOUNT_TYPE_EXISTING:
+          state.accountName = msg.body.actions[0].selected_options[0].value
+          // here, we need to respond (not say) to make the select menu disappear
           msg
-            .say(PRODUCT_MSG)
+            .respond(PRODUCT_MSG)
             .route(HANDLE_PRODUCT, state, 60)
-        }
-        break
-      case ACCOUNT_TYPE_EXISTING:
-        state.accountName = msg.body.actions[0].selected_options[0].value
-        // here, we need to respond (not say) to make the select menu disappear
-        msg
-          .respond(PRODUCT_MSG)
-          .route(HANDLE_PRODUCT, state, 60)
-        break
-      case ACCOUNT_TYPE_NONE:
-        console.log(`Error: shouldn't get here with ACCOUNT_TYPE_NONE?`)
-        break
+          break
+        case ACCOUNT_TYPE_NONE:
+          console.log(`Error: shouldn't get here with ACCOUNT_TYPE_NONE?`)
+          break
+      }
     }
   })
 
   slapp.route(HANDLE_PRODUCT, (msg, state) => {
-    state.product = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
-    const owner = product.getProductOwner(state.product)
-    const criticalButtonText = state.accountType === ACCOUNT_TYPE_EXISTING ? 'Churn Risk!' : 'Critical'
-    const promptText = state.accountName ? `What is the Priority for ${state.accountName}?` : `What is the Priority?`
-    msg.respond({
-      text: state.accountName
-        ? `${owner} is going to be thrilled to hear about a new ${state.product} request from ${state.accountName}!`
-        : `${owner} is going to be thrilled to hear about a new ${state.product} request!`,
-      delete_original: true,
-      attachments: [
-        {
-          text: promptText,
-          callback_id: HANDLE_PRIORITY,
-          actions: [
-            { name: 'answer', text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'), type: 'button', value: 'Critical' },
-            { name: 'answer', text: jiraUtils.getPriorityLabel('High', true), type: 'button', value: 'High' },
-            { name: 'answer', text: jiraUtils.getPriorityLabel('Medium', true), type: 'button', value: 'Medium' },
-            { name: 'answer', text: jiraUtils.getPriorityLabel('Low', true), type: 'button', value: 'Low' }
-          ]
-        }
-      ]
-    })
-      .route(HANDLE_PRIORITY, state, 60)
+    if (!isQuitter(msg)) {
+      state.product = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
+      const owner = product.getProductOwner(state.product)
+      const criticalButtonText = state.accountType === ACCOUNT_TYPE_EXISTING ? 'Churn Risk!' : 'Critical'
+      const promptText = state.accountName ? `What is the Priority for ${state.accountName}?` : `What is the Priority?`
+      msg.respond({
+        text: state.accountName
+          ? `${owner} is going to be thrilled to hear about a new ${state.product} request from ${state.accountName}!`
+          : `${owner} is going to be thrilled to hear about a new ${state.product} request!`,
+        delete_original: true,
+        attachments: [
+          {
+            text: promptText,
+            callback_id: HANDLE_PRIORITY,
+            actions: [
+              { name: 'answer', text: criticalButtonText + jiraUtils.getPriorityLabel('Critical'), type: 'button', value: 'Critical' },
+              { name: 'answer', text: jiraUtils.getPriorityLabel('High', true), type: 'button', value: 'High' },
+              { name: 'answer', text: jiraUtils.getPriorityLabel('Medium', true), type: 'button', value: 'Medium' },
+              { name: 'answer', text: jiraUtils.getPriorityLabel('Low', true), type: 'button', value: 'Low' }
+            ]
+          }
+        ]
+      })
+        .route(HANDLE_PRIORITY, state, 60)
+    }
   })
 
   slapp.route(HANDLE_PRIORITY, (msg, state) => {
-    state.priority = msg.body.actions[0].value
-    msg.respond({
-      text: `Give me a one-line Summary:`,
-      callback_id: HANDLE_SUMMARY,
-      delete_original: true
-    })
-      .route(HANDLE_SUMMARY, state, 60)
+    if (!isQuitter(msg)) {
+      state.priority = msg.body.actions[0].value
+      msg.respond({
+        text: `Give me a one-line Summary:`,
+        callback_id: HANDLE_SUMMARY,
+        delete_original: true
+      })
+        .route(HANDLE_SUMMARY, state, 60)
+    }
   })
 
   slapp.route(HANDLE_SUMMARY, (msg, state) => {
-    const answer = msg.body.event.text.trim()
-    if (!isQuitter(msg, answer)) {
+    if (!isQuitter(msg)) {
+      const answer = msg.body.event.text.trim()
       state.summary = answer
       msg.say({
         // Note: this one needs to be a .say, not .respond?
@@ -260,8 +272,8 @@ module.exports = (slapp) => {
   })
 
   slapp.route(HANDLE_DESCRIPTION, (msg, state) => {
-    const answer = msg.body.event.text.trim()
-    if (!isQuitter(msg, answer)) {
+    if (!isQuitter(msg)) {
+      const answer = msg.body.event.text.trim()
       state.description = answer
 
       // get the user's real name from Slack (userid is available somewhere down in msg.body, but we want a friendly name
@@ -299,15 +311,17 @@ module.exports = (slapp) => {
   })
 
   slapp.route(HANDLE_CONFIRM, (msg, state) => {
-    const isCorrect = msg.body.actions[0].value === 'create'
+    if (!isQuitter(msg)) {
+      const isCorrect = msg.body.actions[0].value === 'create'
 
-    if (!isCorrect) {
-      msg.respond(msg.body.response_url, { text: 'Request creation cancelled.' })
-      return
+      if (!isCorrect) {
+        msg.respond(msg.body.response_url, { text: 'Request creation cancelled.' })
+        return
+      }
+
+      msg.respond(msg.body.response_url, { text: 'Creating...' })
+      createIssueInJIRA(msg, state)
     }
-
-    msg.respond(msg.body.response_url, { text: 'Creating...' })
-    createIssueInJIRA(msg, state)
   })
 }
 
@@ -368,11 +382,18 @@ function createIssueInJIRA (msg, state) {
     })
 }
 
-function isQuitter (msg, answer) {
+function isQuitter (msg) {
   var quitter = false
-  if (answer.toLowerCase() === 'quit') {
-    quitter = true
-    msg.say([ `Quitter! :stuck_out_tongue:`, `Fine, didn't want your new Request, anyway! :sob:`, `A day may come when we create a Request, but *_It Is Not This Day!_* :crossed_swords:` ])
+  if (!msg.body.event) {
+    // user pushed a button
+    return false
+  } else {
+    const answer = msg.body.event.text.trim()
+
+    if (answer.toLowerCase() === 'quit') {
+      quitter = true
+      msg.say([ `Quitter! :stuck_out_tongue:`, `Fine, didn't want your new Request, anyway! :sob:`, `A day may come when we create a Request, but *_It Is Not This Day!_* :crossed_swords:` ])
+    }
+    return quitter
   }
-  return quitter
 }
