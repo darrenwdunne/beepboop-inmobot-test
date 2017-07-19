@@ -19,7 +19,6 @@
     "fuse.js": "^3.0.5",
     "jira-client": "^6.4.0",
     "moment": "^2.18.1",
-    "moment-timezone": "^0.5.13",
     "nodemon": "^1.11.0",
     "request": "^2.81.0",
     "slapp": "^2.4.1",
