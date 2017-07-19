@@ -1,4 +1,5 @@
 .env
+*.csv
 test.js
 # Logs
 logs

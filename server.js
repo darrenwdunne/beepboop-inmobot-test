@@ -1,8 +1,6 @@
 // Create a new Request in JIRA via a conversation with inMoBot
 // Author: Darren Dunne
 
-// FIXME: set "Account Total" to 1 on newly created Requests (if they've selected prospect or existing account)
-// FIXME: auto-set Segment (based on Account lookup?)
 // TODO: throw early error if .env isn't setup correctly
 // TODO: allow user to quit midstream?
 

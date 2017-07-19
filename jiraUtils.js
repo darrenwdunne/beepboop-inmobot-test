@@ -3,6 +3,7 @@ const Fuse = require('fuse.js')
 
 const CUSTOM_FIELD_ACCOUNT = 'customfield_11501'
 var accountsCache = null
+const CUSTOM_FIELD_ACCOUNT_TOTAL = 'customfield_11800'
 
 const CUSTOM_FIELD_SEGMENT = 'customfield_11600'
 var segmentsCache = null
@@ -250,6 +251,7 @@ exports.refreshSegmentsCache = refreshSegmentsCache
 exports.buildAccountsOptionsArray = buildAccountsOptionsArray
 exports.getSegmentsCache = getSegmentsCache
 exports.CUSTOM_FIELD_ACCOUNT = CUSTOM_FIELD_ACCOUNT
+exports.CUSTOM_FIELD_ACCOUNT_TOTAL = CUSTOM_FIELD_ACCOUNT_TOTAL
 exports.CUSTOM_FIELD_SEGMENT = CUSTOM_FIELD_SEGMENT
 exports.CUSTOM_FIELD_DEAL_VALUE = CUSTOM_FIELD_DEAL_VALUE
 exports.CUSTOM_FIELD_PRODUCT = CUSTOM_FIELD_PRODUCT
