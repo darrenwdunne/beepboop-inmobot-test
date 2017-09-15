@@ -6,10 +6,10 @@ global.previousIssue = ''
 
 module.exports = (slapp) => {
   // Respond to a JIRA issue (e.g. PX-1234)
-  slapp.message(/(clw-|cs-|ra16-|mds-|px-|rel-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 'ambient'], (msg) => {
+  slapp.message(/(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/i, ['mention', 'direct_message', 'ambient'], (msg) => {
     var text = (msg.body.event && msg.body.event.text) || ''
     var prPattern = /pull-requests/ig
-    var pattern = /(clw-|cs-|ra16-|mds-|px-|rel-|vm-|vnow-)(\d+)/ig
+    var pattern = /(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/ig
     var prMatch = text.match(prPattern)
     var match = text.match(pattern)
 
