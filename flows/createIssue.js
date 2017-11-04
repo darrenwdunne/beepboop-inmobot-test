@@ -219,10 +219,18 @@ module.exports = (slapp) => {
 
   slapp.route(HANDLE_PRODUCT, (msg, state) => {
     if (!isQuitter(msg)) {
-      state.product = msg.body.actions[0].value // FIXME: if they just type text (not a button, reroute)
+      state.product = msg.body.actions[0].value
       const owner = product.getProductOwner(state.product)
       const criticalButtonText = state.accountType === ACCOUNT_TYPE_EXISTING ? 'Churn Risk!' : 'Critical'
-      const promptText = state.accountName ? `What is the Priority for ${state.accountName}?` : `What is the Priority?`
+      var promptText = `What is the Priority?`
+      switch (state.accountType) {
+        case ACCOUNT_TYPE_EXISTING:
+          promptText = `On behalf of ${state.accountName}, what Priority does CS place on this Request?`
+          break
+        case ACCOUNT_TYPE_PROSPECT:
+          promptText = `On behalf of ${state.accountName}, what is the Priority relative to closing the opportunity?`
+          break
+      }
       msg.respond({
         text: state.accountName
           ? `${owner} is going to be thrilled to hear about a new ${state.product} request from ${state.accountName}!`
