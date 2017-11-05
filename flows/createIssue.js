@@ -382,7 +382,7 @@ function createIssueInJIRA (msg, state) {
       })
         .then((issue) => {
           msg.respond(msg.body.response_url, { text: 'Here is your new Request in the Client Wish List:', delete_original: true }) // remove the "Creating" text
-          fetchIssue.outputMessage(msg, issue.key, '', '')
+          fetchIssue.outputJiraIssueMessage(msg, issue.key, '', '')
         })
         .catch((error) => {
           console.log(error.message)
