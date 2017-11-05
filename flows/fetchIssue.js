@@ -5,33 +5,37 @@ const jiraUtils = require('./../jiraUtils')
 global.previousIssue = ''
 
 module.exports = (slapp) => {
-  // Respond to a JIRA issue (e.g. PX-1234)
-  slapp.message(/(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/i, [ 'mention', 'direct_message', 'ambient' ], (msg) => {
+  // respond to Bitbucket Pull Request URLs
+  const regex = new RegExp(`(${process.env.BITBUCKET_DIFF_URL_PREFIX})`, 'i')
+  slapp.message(regex, [ 'mention', 'direct_message', 'ambient' ], (msg) => {
     var text = (msg.body.event && msg.body.event.text) || ''
     var prPattern = /pull-requests/gi
-    var pattern = /(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/gi
     var prMatch = text.match(prPattern)
-    var match = text.match(pattern)
 
     if (prMatch !== null && prMatch.length > 0) {
       // process as a pull request - need to extract the url that was pasted
-      var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/ // eslint-disable-line
+      var urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/g // eslint-disable-line
       var urlMatch = text.match(urlPattern)
-      jiraUtils.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[0]).then((bbStr) => {
-        // what if user posted PX-123 and then a separate PR url? Need to make sure we only return the text for the pr (not the random issue number)
-        if (match.length > 1) {
-          match = urlMatch[0].match(pattern)
-        }
-        // outputMessage(msg, match[0].toUpperCase(), bbStr)
-        module.exports.outputJiraIssueMessage(msg, match[0], '', 'Reviewers: ' + bbStr)
-      })
-    } else {
-      // treat is as a regular text issue
-      // there may be multiple issues in the text
-      for (var i = 0; i < match.length; i++) {
-        const issueKey = match[i].toUpperCase()
-        module.exports.outputJiraIssueMessage(msg, issueKey, '', '')
+      for (var i = 0; i < urlMatch.length; i++) {
+        jiraUtils.getPRStatusString(process.env.BITBUCKET_URL, process.env.JIRA_U, process.env.JIRA_P, urlMatch[i]).then((result) => {
+          // what if user posted PX-123 and then a separate PR url? Need to make sure we only return the text for the pr (not the random issue number)
+          // outputMessage(msg, match[0].toUpperCase(), bbStr)
+          module.exports.outputPRMessage(msg, result.issueStr, result.prTitle, result.prURL, `Reviewers: ${result.approverStr}`)
+        })
       }
+    }
+  })
+
+  // Respond to a JIRA issue (e.g. PX-1234)
+  slapp.message(/(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/i, [ 'mention', 'direct_message', 'ambient' ], (msg) => {
+    var text = (msg.body.event && msg.body.event.text) || ''
+    var pattern = /(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/gi
+    var match = text.match(pattern)
+
+    // there may be multiple issues in the text
+    for (var i = 0; i < match.length; i++) {
+      const issueKey = match[i].toUpperCase()
+      module.exports.outputJiraIssueMessage(msg, issueKey, '', '')
     }
   })
 
@@ -61,12 +65,12 @@ var outputJiraIssueMessage = function (msg, issueKey, introText, footerText) {
             {
               fallback: '',
               text: '',
-              title: jiraIssue.fields.issuetype.name + ' ' + issueKey + ': ' + jiraIssue.fields.summary,
+              title: `${jiraIssue.fields.issuetype.name} ${issueKey}: ${jiraIssue.fields.summary}`,
+              title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
               // thumb_url: avatarUrl,
               author_name: getAttributesText(jiraIssue),
               author_icon: avatarUrl,
               footer: footerText,
-              title_link: 'https://inmotionnow.atlassian.net/browse/' + issueKey,
               // mrkdwn_in: ['fields'],
               // 'fields': [
               //   {
@@ -99,6 +103,57 @@ var outputJiraIssueMessage = function (msg, issueKey, introText, footerText) {
   }
 }
 
+var outputPRMessage = function (msg, issueKey, prTitle, prURL, approversStr) {
+  if (global.previousIssue !== prTitle) {
+    // don't want to be "chatty" - if a user keeps mentioning a single issue, only report back on it once
+    global.previousIssue = prTitle
+    if (!issueKey) {
+      // it's a PR that had no associated Jira issue, so can't display the avatar, status, etc...
+      msg.say({
+        text: '',
+        attachments: [
+          {
+            fallback: '',
+            text: '',
+            title: prTitle,
+            title_link: prURL,
+            footer: approversStr
+          }
+        ]
+      })
+    } else {
+      // these env vars are configured during bot installation and passed in during initialization
+      jiraUtils
+        .getIssue(process.env.JIRA_URL, process.env.JIRA_U, process.env.JIRA_P, issueKey)
+        .then((jiraIssue) => {
+          var avatarUrl = null
+          if (jiraIssue.fields.assignee != null) {
+            avatarUrl = jiraIssue.fields.assignee.avatarUrls['48x48']
+          }
+
+          msg.say({
+            text: `${jiraIssue.fields.issuetype.name} ${issueKey}: ${jiraIssue.fields.summary}`,
+            attachments: [
+              {
+                fallback: '',
+                text: '',
+                title: prTitle,
+                title_link: prURL,
+                author_name: getAttributesText(jiraIssue),
+                author_icon: avatarUrl,
+                footer: approversStr,
+                color: jiraUtils.getIssueColor(jiraIssue.fields.issuetype.name, jiraIssue.fields.priority.name)
+              }
+            ]
+          })
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    }
+  }
+}
+
 function getAttributesText (jiraIssue) {
   var text = jiraIssue.fields.assignee === null ? 'Unassigned' : jiraIssue.fields.assignee.displayName
   text += ' | ' + jiraIssue.fields.status.name + ' | ' + jiraUtils.getPriorityLabel(jiraIssue.fields.priority.name, true)
@@ -110,3 +165,4 @@ function getAttributesText (jiraIssue) {
 }
 
 module.exports.outputJiraIssueMessage = outputJiraIssueMessage
+module.exports.outputPRMessage = outputPRMessage

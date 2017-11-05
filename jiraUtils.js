@@ -49,18 +49,18 @@ var getIssue = function (jiraurl, jirau, jirap, issue) {
 // need to parse out:
 //  - repo slug (e.g. web-vnow)
 //  - the PR number (in this case, 290) so we can surf through the activity log to see who already approved
-var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
+var getPRStatusString = function (bbUrl, jirau, jirap, prURL) {
   return new Promise((resolve, reject) => {
-    if (bitBucketDiffURL === undefined) {
+    if (prURL === undefined) {
       reject(new Error('Need to provide a bitbucket diff url'))
     } else {
       if (process.env.BITBUCKET_DIFF_URL_PREFIX === undefined) {
         reject(new Error('BITBUCKET_DIFF_URL_PREFIX env variable not set'))
       } else {
-        if (bitBucketDiffURL.indexOf(process.env.BITBUCKET_DIFF_URL_PREFIX) !== 0) {
+        if (prURL.indexOf(process.env.BITBUCKET_DIFF_URL_PREFIX) !== 0) {
           reject(new Error('Error: given URL did not start with BITBUCKET_DIFF_URL_PREFIX'))
         }
-        var projectURL = bitBucketDiffURL
+        var projectURL = prURL
         var projectSlug = projectURL.replace(process.env.BITBUCKET_DIFF_URL_PREFIX, '')
         projectSlug = projectSlug.substr(0, projectSlug.indexOf('/'))
         // get the PR (it's the first number between slashes)
@@ -76,29 +76,53 @@ var getPRStatusString = function (bbUrl, jirau, jirap, bitBucketDiffURL) {
         // this URL shows the activity (comments, history of reviewers, etc...)
         // const URL = process.env.BITBUCKET_URL + projectSlug + '/pullrequests/' + match[0] + '/activity'
         const URL = process.env.BITBUCKET_URL + projectSlug + '/pullrequests/' + match[0]
-        // console.log('fetching pull requests URL: ' + URL)
-        request(
-          {
-            url: URL,
-            headers: {
-              Authorization: 'Basic ' + Buffer.from(`${jirau}:${jirap}`).toString('base64')
-            }
-          },
-          function (error, response, results) {
-            if (error) {
-              console.error('Error: ' + error)
-            } else {
-              var jiraData = JSON.parse(results)
-              var retStr = ''
-              for (let participant of jiraData.participants) {
-                retStr += participant.approved ? ':white_check_mark:' : ':white_medium_square:'
-                // lastname
-                retStr += ' ' + participant.user.display_name.split(' ')[1] + '   '
+        console.log('fetching pull requests URL: ' + URL)
+        request({ url: URL, headers: { Authorization: 'Basic ' + Buffer.from(`${jirau}:${jirap}`).toString('base64') } }, function (error, response, results) {
+          if (error) {
+            console.error('Error: ' + error)
+          } else {
+            var jiraData = JSON.parse(results)
+            var approverStr = ''
+            var issueStr = ''
+            var approvedUsers = []
+            var nonApprovedUsers = []
+            // show all reviewers with a checkbox in front of their name
+            for (let participant of jiraData.participants) {
+              const lastName = participant.user.display_name.split(' ')[1]
+              if (participant.approved) {
+                // users has already approved the PR
+                approvedUsers.push(lastName)
+              } else {
+                if (participant.role !== 'PARTICIPANT') {
+                  // don't include the PR requester in the list
+                  nonApprovedUsers.push(lastName)
+                }
               }
-              resolve(retStr)
             }
+            approvedUsers.sort()
+            nonApprovedUsers.sort()
+
+            for (let user of approvedUsers) {
+              approverStr += `☑\u00A0${user}   `
+            }
+            for (let user of nonApprovedUsers) {
+              approverStr += `☐\u00A0${user}   `
+            }
+
+            // now find the associated Jira issue - the UI shows it as a Related Issue, but I can't seem to find that in the API, so see if they've included it in the branch name (e.g. bob/PX-3139)
+            if (jiraData.source.branch) {
+              const branchName = jiraData.source.branch.name
+              var pattern = /(mds-|px-|ra16-|vm-|vnow-)(\d+)/gi
+              var match = branchName.match(pattern)
+              if (match && match.length > 0) {
+                // it's only a convention (not a requirement) to include the issue number in the branch name
+                // branch name might include multiple issues - just grab the first one for now
+                issueStr = match[0]
+              }
+            }
+            resolve({ approverStr: approverStr, issueStr: issueStr, prTitle: jiraData.title, prURL: prURL })
           }
-        )
+        })
       }
     }
   })
