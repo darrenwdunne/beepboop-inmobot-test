@@ -112,7 +112,7 @@ var getPRStatusString = function (bbUrl, jirau, jirap, prURL) {
             // now find the associated Jira issue - the UI shows it as a Related Issue, but I can't seem to find that in the API, so see if they've included it in the branch name (e.g. bob/PX-3139)
             if (jiraData.source.branch) {
               const branchName = jiraData.source.branch.name
-              var pattern = /(mds-|px-|ra16-|vm-|vnow-)(\d+)/gi
+              var pattern = /(mds-|px-|ra-|vm-|vnow-)(\d+)/gi
               var match = branchName.match(pattern)
               if (match && match.length > 0) {
                 // it's only a convention (not a requirement) to include the issue number in the branch name

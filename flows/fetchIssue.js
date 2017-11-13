@@ -27,9 +27,9 @@ module.exports = (slapp) => {
   })
 
   // Respond to a JIRA issue (e.g. PX-1234)
-  slapp.message(/(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/i, [ 'mention', 'direct_message', 'ambient' ], (msg) => {
+  slapp.message(/(clw-|cs-|jl-|mds-|px-|ra-|rel-|vm-|vnow-)(\d+)/i, [ 'mention', 'direct_message', 'ambient' ], (msg) => {
     var text = (msg.body.event && msg.body.event.text) || ''
-    var pattern = /(clw-|cs-|jl-|mds-|px-|ra16-|rel-|vm-|vnow-)(\d+)/gi
+    var pattern = /(clw-|cs-|jl-|mds-|px-|ra-|rel-|vm-|vnow-)(\d+)/gi
     var match = text.match(pattern)
 
     // there may be multiple issues in the text
